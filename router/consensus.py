@@ -4,6 +4,7 @@ import time
 import math
 from config import  ACTIVE_MODELS
 from providers import call_model, embed_text
+from cache import get_cached, set_cached
 
 def cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b))     
@@ -28,7 +29,13 @@ async def pick_best(client: httpx.AsyncClient, successful: list[dict]) -> tuple[
     winner = max(successful, key=lambda r: (scores[r["name"]], -r["latency_ms"]))
     return winner, scores
 
-async def run_consensus(prompt:str) -> dict:
+async def run_consensus(prompt: str, use_cache: bool = True) -> dict:
+    if use_cache:
+        cached = await get_cached(prompt)
+        if cached is not None:
+            cached["cached"] = True          
+            return cached
+
     t0 = time.perf_counter()
     async with httpx.AsyncClient() as client:
         results = await asyncio.gather(
@@ -39,7 +46,8 @@ async def run_consensus(prompt:str) -> dict:
         "answer": None,
         "chosen": None,
         "strategy": "semantic-consensus",
-        "candidates": results,}
+        "candidates": results,
+        "cached": False}
     try:
         winner, scores = await pick_best(client, working)
         strategy = "semantic-consensus"
@@ -50,8 +58,13 @@ async def run_consensus(prompt:str) -> dict:
     for r in results:
         r["agreement"] = round(scores.get(r["name"], 0.0), 3)
         r["was_selected"] = (r["name"] == winner["name"])
-    return {
+    result = {
         "answer": winner["text"],
         "chosen": winner["name"],
         "strategy": strategy,
-        "candidates": results,}
+        "candidates": results,
+        "cached": False}
+
+    if use_cache:
+        await set_cached(prompt, result)
+        return result
