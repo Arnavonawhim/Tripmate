@@ -1,6 +1,6 @@
 import time
 import httpx
-from config import Model, LLMS
+from config import Model, PROVIDERS
 async def call_model(
     client: httpx.AsyncClient,
     model: Model,
@@ -8,7 +8,7 @@ async def call_model(
     timeout: float = 30.0,
     ) -> dict:
 
-    provider = LLMS[model.provider]  
+    provider = PROVIDERS[model.provider]  
     start = time.perf_counter()
     headers = {}
     if provider.api_key:
@@ -20,8 +20,7 @@ async def call_model(
         json={
             "model": model.model,
             "messages": [{"role": "user", "content": prompt}],},
-            timeout=timeout,
-        )
+            timeout=timeout,)
         resp.raise_for_status()
         data = resp.json()
         return {
@@ -40,5 +39,14 @@ async def call_model(
         "text": None,
         "latency_ms": round((time.perf_counter() - start) * 1000),
         "tokens": None,
-        "error": str(e),
-        }
+        "error": str(e),}
+
+async def embed_text(
+    client: httpx.AsyncClient,
+    text: str,
+    base_url: str = "http://localhost:11434/v1/embeddings",
+    model: str = "nomic-embed-text",
+) -> list[float]:
+    resp = await client.post(base_url, json={"model": model, "input": text})
+    resp.raise_for_status()
+    return resp.json()["data"][0]["embedding"]

@@ -1,13 +1,14 @@
 import os 
 from dotenv import load_dotenv
 from dataclasses import dataclass
+load_dotenv()
 
 @dataclass
 
-class LLMS:
+class Provider:
     name: str
     base_url: str
-    api_key: str|None=None 
+    key_env: str|None=None 
 
     @property
     def api_key(self)->str|None:
@@ -19,20 +20,20 @@ class LLMS:
 @dataclass
 class Model:
     name: str       
-    LLMS: str    
-    model: str      
+    provider: str    
+    model: str          
     
-    LLMSS = {
-    "ollama": LLMS(
+PROVIDERS = {
+    "ollama": Provider(
     "ollama",
     "http://localhost:11434/v1/chat/completions",),
 
-    "groq": LLMS(
+    "groq": Provider(
     "groq",
     "https://api.groq.com/openai/v1/chat/completions",
     key_env="groq_api",),
 
-    "gemini": LLMS(
+    "gemini": Provider(
     "gemini",
     "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     key_env="gemini_api",),}
@@ -43,4 +44,4 @@ Model("qwen2.5 (local)", "ollama", "qwen2.5:3b"),
 Model("llama-3.3-70b (groq)", "groq", "llama-3.3-70b-versatile"),
 Model("gemini-2.0-flash", "gemini", "gemini-2.0-flash"),]
 
-ACTIVE_MODELS = [m for m in MODELS if LLMS[m.provider].available]
+ACTIVE_MODELS = [m for m in MODELS if PROVIDERS[m.provider].available]

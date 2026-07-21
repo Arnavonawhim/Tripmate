@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from config import ACTIVE_MODELS, LLMS
+from config import ACTIVE_MODELS, Provider
 from consensus import run_consensus
 
 app = FastAPI(title="Consensus Router")
