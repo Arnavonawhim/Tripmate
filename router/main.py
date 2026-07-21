@@ -2,8 +2,16 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from config import ACTIVE_MODELS, Provider
 from consensus import run_consensus
+from contextlib import asynccontextmanager
+from db import init_db, close_db, model_stats
 
-app = FastAPI(title="Consensus Router")
+@asynccontextmanager
+async def lifespan(app: FastAPI):     
+    await init_db()
+    yield
+    await close_db()
+app = FastAPI(title="Consensus Router", lifespan=lifespan)
+
 class AskRequest(BaseModel):
     prompt: str
 
@@ -20,3 +28,7 @@ async def models():
 @app.post("/ask")
 async def ask(req: AskRequest):
     return await run_consensus(req.prompt)
+
+@app.get("/metrics/models")
+async def metrics_models():
+    return await model_stats()
