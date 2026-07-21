@@ -1,6 +1,8 @@
 import time
 import httpx
+import json
 from config import Model, PROVIDERS
+
 async def call_model(
     client: httpx.AsyncClient,
     model: Model,
@@ -50,3 +52,44 @@ async def embed_text(
     resp = await client.post(base_url, json={"model": model, "input": text})
     resp.raise_for_status()
     return resp.json()["data"][0]["embedding"]
+
+async def stream_model(
+    client: httpx.AsyncClient,
+    model: Model,
+    prompt: str,
+    timeout: float = 60.0,
+):
+    provider = PROVIDERS[model.provider]
+    headers = {}
+    if provider.api_key:
+        headers["Authorization"] = f"Bearer {provider.api_key}"
+
+    payload = {
+        "model": model.model,
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": True,}
+    
+    async with client.stream(
+        "POST", provider.base_url, headers=headers, json=payload, timeout=timeout
+    ) as resp:
+        if resp.status_code >= 400:
+            body = await resp.aread()
+            detail = body.decode(errors="replace").strip()[:500]
+            raise RuntimeError(
+                f"{model.model} @ {provider.name} returned "
+                f"HTTP {resp.status_code}: {detail}"
+            )
+
+        async for line in resp.aiter_lines():
+            if not line or not line.startswith("data:"):
+                continue
+            data = line[len("data:"):].strip()
+            if data == "[DONE]":
+                break
+            try:
+                chunk = json.loads(data)
+                delta = chunk["choices"][0]["delta"].get("content")
+                if delta:
+                    yield delta
+            except Exception:
+                continue
