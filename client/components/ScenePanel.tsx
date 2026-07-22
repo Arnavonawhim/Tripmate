@@ -8,16 +8,17 @@ export default function ScenePanel() {
   const [preview, setPreview] = useState<string | null>(null)
   const [question, setQuestion] = useState("What am I looking at?")
   const [loading, setLoading] = useState(false)
+  const [dragging, setDragging] = useState(false)
   const [result, setResult] = useState<SceneResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0] ?? null
+  function handleFile(f: File | null) {
+    if (!f || !f.type.startsWith("image/")) return
     setFile(f)
     setResult(null)
     setError(null)
     if (preview) URL.revokeObjectURL(preview)
-    setPreview(f ? URL.createObjectURL(f) : null)
+    setPreview(URL.createObjectURL(f))
   }
 
   async function submit() {
@@ -26,9 +27,7 @@ export default function ScenePanel() {
     setError(null)
     setResult(null)
     try {
-      setResult(
-        await askScene(file, question.trim() || "What am I looking at?"),
-      )
+      setResult(await askScene(file, question))
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -37,60 +36,90 @@ export default function ScenePanel() {
   }
 
   return (
-    <div className="panel">
-      <p className="muted">
-        Point your camera at a landmark, menu or sign - or upload a photo - and
-        ask about it. Text in the image gets read and translated inline.
-      </p>
+    <section className="panel fade-up">
+      <label
+        className={`dropzone ${dragging ? "dragging" : ""}`}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setDragging(true)
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault()
+          setDragging(false)
+          handleFile(e.dataTransfer.files?.[0] ?? null)
+        }}
+      >
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+        />
+        {preview ? (
+          <img className="preview" src={preview} alt="scene preview" />
+        ) : (
+          <div className="dropzone-inner">
+            <div className="dropzone-icon">+</div>
+            <p>
+              <strong>Drop a photograph</strong>, click to browse, or open the
+              camera on mobile
+            </p>
+            <p className="muted">landmarks · menus · signs · street scenes</p>
+          </div>
+        )}
+      </label>
+
       <input
-        type="file"
-        accept="image/*"
-        capture="environment"
-        onChange={onFile}
-      />
-      {preview && <img className="preview" src={preview} alt="scene preview" />}
-      <input
-        type="text"
+        className="question"
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
-        placeholder="What do you want to know about this scene?"
+        placeholder="Translate this menu… what landmark is this…"
       />
+
       <div className="row">
         <button
-          className="primary"
+          className="btn btn-primary"
           onClick={submit}
           disabled={!file || loading}
         >
-          {loading ? "Analyzing scene..." : "Ask about this scene"}
+          {loading ? (
+            <>
+              <span className="spinner" /> reading the scene
+            </>
+          ) : (
+            <>
+              Analyze scene <span className="btn-arrow">→</span>
+            </>
+          )}
         </button>
+        {file && <span className="muted">{file.name}</span>}
       </div>
 
       {error && (
-        <div className="card">
+        <div className="card fade-up">
           <p className="error-text">{error}</p>
         </div>
       )}
 
       {result && (
-        <div className="card winner">
-          <div className="meta">
-            {result.provider && (
-              <span className="badge model">{result.provider}</span>
-            )}
-            {result.latency_ms != null && (
-              <span className="badge">{result.latency_ms} ms</span>
-            )}
-            {result.cached && <span className="badge cached">cached</span>}
+        <div className="card winner fade-up">
+          <p className="micro-label">scene report — vision worker</p>
+          <div className="winner-head">
+            <h3>{result.provider ?? "vision"}</h3>
+            <div className="meta">
+              {result.latency_ms != null && (
+                <span className="badge">{result.latency_ms} ms</span>
+              )}
+              {result.cached && (
+                <span className="badge badge-cached">cached</span>
+              )}
+            </div>
           </div>
-          {result.ok ? (
-            <p className="answer">{result.answer}</p>
-          ) : (
-            <p className="error-text">
-              {(result.errors ?? []).join("\n") || "Scene analysis failed."}
-            </p>
-          )}
+          <p className="answer">{result.answer}</p>
         </div>
       )}
-    </div>
+    </section>
   )
 }

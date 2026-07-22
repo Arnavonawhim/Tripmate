@@ -3,6 +3,31 @@
 import { useCallback, useEffect, useState } from "react"
 import { fetchMetrics, type ModelStats } from "@/lib/api"
 
+function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
+  const [display, setDisplay] = useState(0)
+
+  useEffect(() => {
+    let frame: number
+    const started = performance.now()
+    const duration = 900
+    const step = (t: number) => {
+      const p = Math.min(1, (t - started) / duration)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setDisplay(Math.round(value * eased))
+      if (p < 1) frame = requestAnimationFrame(step)
+    }
+    frame = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(frame)
+  }, [value])
+
+  return (
+    <>
+      {display}
+      {suffix}
+    </>
+  )
+}
+
 export default function MetricsPanel() {
   const [stats, setStats] = useState<ModelStats[]>([])
   const [loading, setLoading] = useState(false)
@@ -24,19 +49,54 @@ export default function MetricsPanel() {
     refresh()
   }, [refresh])
 
+  const totalCalls = stats.reduce((acc, s) => acc + s.calls, 0)
+  const best = [...stats]
+    .filter((s) => s.calls > 0)
+    .sort((a, b) => b.win_rate - a.win_rate)[0]
+  const withLatency = stats.filter((s) => s.avg_latency_ms != null)
+  const avgLatency = withLatency.length
+    ? Math.round(
+        withLatency.reduce((acc, s) => acc + (s.avg_latency_ms ?? 0), 0) /
+          withLatency.length
+      )
+    : null
+
   return (
-    <div className="panel">
+    <section className="panel fade-up">
+      <div className="stats-row">
+        <div className="stat-card">
+          <div className="stat-value">
+            <CountUp value={totalCalls} />
+          </div>
+          <div className="stat-label">model calls logged</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value small">{best ? best.model : "—"}</div>
+          <div className="stat-label">top model by win rate</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">
+            {avgLatency != null ? (
+              <CountUp value={avgLatency} suffix=" ms" />
+            ) : (
+              "—"
+            )}
+          </div>
+          <div className="stat-label">avg latency across models</div>
+        </div>
+      </div>
+
       <div className="row">
-        <button className="ghost" onClick={refresh} disabled={loading}>
-          {loading ? "Loading..." : "Refresh"}
+        <button className="btn btn-ghost" onClick={refresh} disabled={loading}>
+          {loading ? "loading…" : "refresh"}
         </button>
         <span className="muted">
-          Per-model win rate, latency and agreement, aggregated from Postgres.
+          Win rate, latency and agreement per model — live from Postgres.
         </span>
       </div>
 
       {error && (
-        <div className="card">
+        <div className="card fade-up">
           <p className="error-text">{error}</p>
         </div>
       )}
@@ -55,10 +115,11 @@ export default function MetricsPanel() {
             </tr>
           </thead>
           <tbody>
-            {stats.length === 0 && !loading && (
+            {stats.length === 0 && (
               <tr>
                 <td colSpan={7} className="muted">
-                  No calls logged yet - run some prompts in the Ask tab first.
+                  No calls logged yet — run some prompts in the Consensus tab
+                  first.
                 </td>
               </tr>
             )}
@@ -70,23 +131,25 @@ export default function MetricsPanel() {
                 <td>{s.wins}</td>
                 <td>
                   <div className="row">
-                    <div className="bar" style={{ width: 80 }}>
+                    <div className="bar">
                       <div
-                        style={{ width: `${Math.round(s.win_rate * 100)}%` }}
+                        style={{
+                          width: `${Math.min(100, Math.round(s.win_rate * 100))}%`,
+                        }}
                       />
                     </div>
                     <span>{Math.round(s.win_rate * 100)}%</span>
                   </div>
                 </td>
                 <td>
-                  {s.avg_latency_ms != null ? `${s.avg_latency_ms} ms` : "-"}
+                  {s.avg_latency_ms != null ? `${s.avg_latency_ms} ms` : "—"}
                 </td>
-                <td>{s.avg_agreement ?? "-"}</td>
+                <td>{s.avg_agreement != null ? s.avg_agreement : "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
+    </section>
   )
 }

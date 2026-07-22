@@ -1,7 +1,7 @@
 import os
 import asyncpg
 
-database = os.environ.get("database_url", "postgresql://postgres:postgres@localhost:5432/tripmate")
+database = os.environ.get("database_url", "postgresql://postgres:postgres@localhost:5433/tripmate")
 _pool: asyncpg.Pool | None=None
 
 async def init_db()-> None:
