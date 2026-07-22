@@ -28,16 +28,14 @@ export default function StreamPanel() {
     try {
       await streamAsk(
         prompt,
-        {
-          onDelta: (delta) => {
-            if (!sawFirst) {
-              sawFirst = true
-              setFirstTokenMs(Math.round(performance.now() - startedAt))
-            }
-            setOutput((prev) => prev + delta)
-          },
-          onError: (message) => setError(message),
+        (delta) => {
+          if (!sawFirst) {
+            sawFirst = true
+            setFirstTokenMs(Math.round(performance.now() - startedAt))
+          }
+          setOutput((prev) => prev + delta)
         },
+        (message) => setError(message),
         controller.signal
       )
     } catch (e) {
