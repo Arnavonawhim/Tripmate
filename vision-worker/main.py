@@ -2,8 +2,17 @@ import httpx
 from fastapi import FastAPI, UploadFile, File, Form
 from vision import describe_scene
 from cache import get_cached, set_cached
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="TripMate Vision Worker")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],      
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 @app.get("/health")
 async def health():
