@@ -1,7 +1,7 @@
 import base64
 import time
 import httpx
-from config import ACTIVE_VISION_PROVIDERS
+from api.config import ACTIVE_VISION_PROVIDERS
 
 SCENE_SYSTEM_PROMPT = (
     "You are Trip-Mate, an AI travel companion looking through the user's camera. "
