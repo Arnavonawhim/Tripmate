@@ -19,6 +19,12 @@ VISION_PROVIDERS = [
         "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
         os.environ.get("gemini_api", ""),
         os.environ.get("gemini_vision_model", "gemini-2.0-flash")),
+    VisionProvider(
+        "openrouter",
+        "https://openrouter.ai/api/v1/chat/completions",
+        os.environ.get("openrouter_api", ""),
+        os.environ.get("openrouter_vision_model",
+                    "meta-llama/llama-3.2-11b-vision-instruct:free"),),
 ]
 
 ACTIVE_VISION = [p for p in VISION_PROVIDERS if p.api_key] 
