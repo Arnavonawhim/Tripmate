@@ -2,7 +2,7 @@ import os
 import time
 import httpx
 import json
-from config import Model, PROVIDERS
+from api.config import Model, PROVIDERS
 
 async def call_model(
     client: httpx.AsyncClient,

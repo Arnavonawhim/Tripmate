@@ -3,11 +3,11 @@ import httpx
 import time
 import math
 import uuid
-from db import log_model_calls
-from config import  ACTIVE_MODELS
-from providers import call_model, embed_text
-from cache import get_cached, set_cached
-from judge import judge_best
+from api.db import log_model_calls
+from api.config import  ACTIVE_MODELS
+from api.providers import call_model, embed_text
+from api.cache import get_cached, set_cached
+from api.judge import judge_best
 
 def cosine(a: list[float], b: list[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b))     
