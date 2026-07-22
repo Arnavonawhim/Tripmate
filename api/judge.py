@@ -1,6 +1,6 @@
 import re
 import json 
-from config import ACTIVE_MODELS
+from api.config import ACTIVE_MODELS
 from providers import call_model
 
 def pick_judge_model():

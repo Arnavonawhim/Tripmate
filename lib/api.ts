@@ -1,7 +1,5 @@
-export const ROUTER_URL =
-  process.env.NEXT_PUBLIC_ROUTER_URL ?? "http://localhost:8000"
-export const VISION_URL =
-  process.env.NEXT_PUBLIC_VISION_URL ?? "http://localhost:8001"
+export const ROUTER_URL = ""
+export const VISION_URL = ""
 
 export type Strategy = "semantic" | "judge"
 
@@ -53,7 +51,7 @@ export type SceneResult = {
 
 export async function fetchHealth(): Promise<boolean> {
   try {
-    const res = await fetch(`${ROUTER_URL}/health`)
+    const res = await fetch(`/api/health`)
     return res.ok
   } catch {
     return false
@@ -61,13 +59,13 @@ export async function fetchHealth(): Promise<boolean> {
 }
 
 export async function fetchModels(): Promise<ModelInfo[]> {
-  const res = await fetch(`${ROUTER_URL}/models`)
+  const res = await fetch(`/api/models`)
   if (!res.ok) throw new Error(`GET /models failed: ${res.status}`)
   return res.json()
 }
 
 export async function fetchMetrics(): Promise<ModelStats[]> {
-  const res = await fetch(`${ROUTER_URL}/metrics/models`)
+  const res = await fetch(`/api/metrics/models`)
   if (!res.ok) throw new Error(`GET /metrics/models failed: ${res.status}`)
   return res.json()
 }
@@ -76,7 +74,7 @@ export async function ask(
   prompt: string,
   strategy: Strategy,
 ): Promise<AskResult> {
-  const res = await fetch(`${ROUTER_URL}/ask`, {
+  const res = await fetch(`/api/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt, strategy }),
@@ -92,7 +90,7 @@ export async function askScene(
   const form = new FormData()
   form.append("image", image, "frame.jpg")
   form.append("question", question)
-  const res = await fetch(`${VISION_URL}/scene`, {
+  const res = await fetch(`/api/scene`, {
     method: "POST",
     body: form,
   })
@@ -106,7 +104,7 @@ export async function streamAsk(
   onError: (message: string) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const res = await fetch(`${ROUTER_URL}/stream`, {
+  const res = await fetch(`/api/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ prompt }),
