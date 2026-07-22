@@ -2,9 +2,9 @@ import type { Metadata } from "next"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Trip-Mate",
+  title: "Trip-Mate — Gateway Console",
   description:
-    "Multi-model AI travel gateway - consensus routing, streaming, vision & metrics",
+    "Multi-model AI travel gateway - consensus routing, streaming, vision & telemetry",
 }
 
 export default function RootLayout({
@@ -14,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div className="grain" aria-hidden="true" />
+        {children}
+      </body>
     </html>
   )
 }

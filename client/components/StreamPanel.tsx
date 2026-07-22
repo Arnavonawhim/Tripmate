@@ -22,28 +22,28 @@ export default function StreamPanel() {
 
     const controller = new AbortController()
     abortRef.current = controller
-    const started = performance.now()
-    let gotFirst = false
+    const startedAt = performance.now()
+    let sawFirst = false
 
     try {
       await streamAsk(
-        prompt.trim(),
+        prompt,
         (delta) => {
-          if (!gotFirst) {
-            gotFirst = true
-            setFirstTokenMs(Math.round(performance.now() - started))
+          if (!sawFirst) {
+            sawFirst = true
+            setFirstTokenMs(Math.round(performance.now() - startedAt))
           }
           setOutput((prev) => prev + delta)
         },
         (message) => setError(message),
-        controller.signal,
+        controller.signal
       )
     } catch (e) {
-      if (!(e instanceof DOMException && e.name === "AbortError")) {
+      if (!controller.signal.aborted) {
         setError(e instanceof Error ? e.message : String(e))
       }
     } finally {
-      setTotalMs(Math.round(performance.now() - started))
+      setTotalMs(Math.round(performance.now() - startedAt))
       setStreaming(false)
       abortRef.current = null
     }
@@ -53,45 +53,66 @@ export default function StreamPanel() {
     abortRef.current?.abort()
   }
 
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) start()
+  }
+
   return (
-    <div className="panel">
-      <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Streams token-by-token from the primary model over SSE..."
-      />
-      <div className="row">
-        <button
-          className="primary"
-          onClick={start}
-          disabled={streaming || !prompt.trim()}
-        >
-          {streaming ? "Streaming..." : "Stream"}
-        </button>
-        {streaming && (
-          <button className="ghost" onClick={stop}>
-            Stop
-          </button>
-        )}
-        {firstTokenMs != null && (
-          <span className="badge">first token {firstTokenMs} ms</span>
-        )}
-        {totalMs != null && !streaming && (
-          <span className="badge">total {totalMs} ms</span>
-        )}
+    <section className="panel fade-up">
+      <div className="composer">
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="Watch tokens arrive live over SSE — try a longer prompt like a full day-by-day itinerary..."
+        />
+        <div className="composer-bar">
+          <div className="row">
+            {firstTokenMs != null && (
+              <span className="badge badge-ok">first token {firstTokenMs} ms</span>
+            )}
+            {totalMs != null && !streaming && (
+              <span className="badge">total {totalMs} ms</span>
+            )}
+          </div>
+          {streaming ? (
+            <button className="btn btn-ghost" onClick={stop}>
+              ■ Stop
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary"
+              onClick={start}
+              disabled={!prompt.trim()}
+            >
+              Stream live <span className="btn-arrow">→</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
-        <div className="card">
+        <div className="card fade-up">
           <p className="error-text">{error}</p>
         </div>
       )}
 
-      {output && (
-        <div className="card">
-          <p className="answer">{output}</p>
+      {(output || streaming) && (
+        <div className="terminal fade-up">
+          <div className="terminal-head">
+            <span className="term-dot r" />
+            <span className="term-dot y" />
+            <span className="term-dot g" />
+            <span className="terminal-title">
+              {streaming ? "● live — tokens over SSE" : "stream complete"}
+            </span>
+          </div>
+          <pre className="terminal-body">
+            {output}
+            {streaming && <span className="caret" />}
+          </pre>
         </div>
       )}
-    </div>
+    </section>
   )
 }
