@@ -1,62 +1,42 @@
-import base64
-import time
-import httpx
-from config import ACTIVE_VISION_PROVIDERS
+import base64, json, re
+from config import ACTIVE_VISION
+from providers import call_vision
 
-SCENE_SYSTEM_PROMPT = (
-    "You are Trip-Mate, an AI travel companion looking through the user's camera. "
-    "Identify landmarks, buildings, dishes and objects when possible. If the image "
-    "contains text (signs, menus, notices), transcribe the important parts and "
-    "translate them to English. Answer the user's question directly and concisely "
-    "(2-6 sentences), and add one genuinely useful travel tip when relevant."
+INSTRUCTIONS = (
+    "You are a travel assistant looking at a photo a traveler just took. "
+    "Answer their question about the scene helpfully and concisely. "
+    "Also transcribe any readable text in the image (signs, menus, labels); "
+    "if there is none, use an empty string. "
+    'Respond with ONLY minified JSON: {"answer": "...", "text_found": "..."}.'
 )
 
-async def ask_vision(
-    client: httpx.AsyncClient,
-    image_bytes: bytes,
-    mime_type: str,
-    question: str,
-    timeout: float = 60.0,
-) -> dict:
-    b64 = base64.b64encode(image_bytes).decode()
-    data_url = f"data:{mime_type};base64,{b64}"
-    errors: list[str] = []
+def _parse_json(text: str) -> dict:
+    match = re.search(r"\{.*\}", text, re.DOTALL)
+    if not match:
+        return {"answer": text.strip(), "text_found": ""}
+    try:
+        data = json.loads(match.group(0))
+        return {"answer": str(data.get("answer", "")).strip(),
+                "text_found": str(data.get("text_found", "")).strip()}
+    except json.JSONDecodeError:
+        return {"answer": text.strip(), "text_found": ""}
 
-    for provider in ACTIVE_VISION_PROVIDERS:
-        start = time.perf_counter()
+async def describe_scene(client, image_bytes, question, mime_type="image/jpeg") -> dict:
+    """Try each active provider in order; return the first success (same
+    failover idea as the router — move on when one is down or rate-limited)."""
+    if not ACTIVE_VISION:
+        raise RuntimeError("no vision providers configured (set groq_api or gemini_api)")
+    b64 = base64.b64encode(image_bytes).decode()
+    data_uri = f"data:{mime_type};base64,{b64}"
+    q = question.strip() or "What is this? Describe it for a traveler."
+    prompt = f"{INSTRUCTIONS}\n\nTraveler's question: {q}"
+
+    errors = []
+    for provider in ACTIVE_VISION:
         try:
-            resp = await client.post(
-                provider.base_url,
-                headers={"Authorization": f"Bearer {provider.api_key}"},
-                json={
-                    "model": provider.model,
-                    "messages": [
-                        {"role": "system", "content": SCENE_SYSTEM_PROMPT},
-                        {"role": "user", "content": [
-                            {"type": "text", "text": question},
-                            {"type": "image_url", "image_url": {"url": data_url}},
-                        ]},
-                    ],
-                },
-                timeout=timeout,)
-            resp.raise_for_status()
-            data = resp.json()
-            return {
-                "ok": True,
-                "answer": data["choices"][0]["message"]["content"],
-                "provider": provider.name,
-                "model": provider.model,
-                "latency_ms": round((time.perf_counter() - start) * 1000),
-                "tokens": data.get("usage", {}).get("total_tokens"),
-                "errors": errors,}
+            result = _parse_json(await call_vision(client, provider, data_uri, prompt))
+            result["provider"] = provider.name
+            return result
         except Exception as e:
             errors.append(f"{provider.name}: {e}")
-
-    return {
-        "ok": False,
-        "answer": None,
-        "provider": None,
-        "model": None,
-        "latency_ms": None,
-        "tokens": None,
-        "errors": errors,}
+    raise RuntimeError("all vision providers failed -> " + " | ".join(errors))
