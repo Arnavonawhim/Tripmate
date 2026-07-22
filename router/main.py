@@ -18,6 +18,7 @@ app = FastAPI(title="Consensus Router", lifespan=lifespan)
 
 class AskRequest(BaseModel):
     prompt: str
+    strategy: str = "semantic"   
 
 @app.get("/health")
 async def health():
@@ -28,10 +29,6 @@ async def models():
     return [
     {"name": m.name, "provider": m.provider, "model": m.model}
     for m in ACTIVE_MODELS]
-    
-@app.post("/ask")
-async def ask(req: AskRequest):
-    return await run_consensus(req.prompt)
 
 @app.get("/metrics/models")
 async def metrics_models():
@@ -53,3 +50,7 @@ async def stream(req: AskRequest):
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_gen(), media_type="text/event-stream")
+
+@app.post("/ask")
+async def ask(req: AskRequest):
+    return await run_consensus(req.prompt, strategy=req.strategy)
