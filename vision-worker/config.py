@@ -13,22 +13,22 @@ class VisionProvider:
 
 VISION_PROVIDERS = [
     VisionProvider(
-        "openrouter",
-        "https://openrouter.ai/api/v1/chat/completions",
-        os.environ.get("openrouter_api", ""),
-        os.environ.get("openrouter_vision_model", "meta-llama/llama-3.2-11b-vision-instruct:free"),
-    ),
-    VisionProvider(
         "groq",
         "https://api.groq.com/openai/v1/chat/completions",
         os.environ.get("groq_api", ""),
-        os.environ.get("groq_vision_model", "meta-llama/llama-4-maverick-17b-128e-instruct"),
+        os.environ.get("groq_vision_model", "meta-llama/llama-4-scout-17b-16e-instruct"),
     ),
     VisionProvider(
         "gemini",
         "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
         os.environ.get("gemini_api", ""),
-        os.environ.get("gemini_vision_model", "gemini-2.0-flash"),
+        os.environ.get("gemini_vision_model", "gemini-2.5-flash"),
+    ),
+    VisionProvider(
+        "openrouter",
+        "https://openrouter.ai/api/v1/chat/completions",
+        os.environ.get("openrouter_api", ""),
+        os.environ.get("openrouter_vision_model", "qwen/qwen2.5-vl-72b-instruct:free"),
     ),
 ]
 
