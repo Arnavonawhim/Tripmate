@@ -48,7 +48,7 @@ export default function AskPanel() {
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder='Ask anything — "3 hidden gems near the Louvre", "is street food in Bangkok safe?", "draft a 2-day Kyoto plan"...'
+          placeholder="Three hidden gems near the Louvre… is street food in Bangkok safe… a two-day plan for Kyoto…"
         />
         <div className="composer-bar">
           <div className="seg">
@@ -70,7 +70,7 @@ export default function AskPanel() {
           >
             {loading ? (
               <>
-                <span className="spinner" /> racing models
+                <span className="spinner" /> polling the fleet
               </>
             ) : (
               <>
@@ -107,32 +107,32 @@ export default function AskPanel() {
       {result && (
         <>
           <div className="card winner fade-up">
+            <p className="micro-label">the pick — {result.strategy}</p>
             <div className="winner-head">
-              <h3>
-                <span className="crown">👑</span>
-                {result.chosen ?? "no model succeeded"}
-              </h3>
+              <h3>{result.chosen ?? "no model succeeded"}</h3>
               <div className="meta">
-                <span className="badge badge-model">{result.strategy}</span>
                 {result.cached && (
-                  <span className="badge badge-cached">⚡ cached</span>
+                  <span className="badge badge-cached">cached</span>
                 )}
                 {result.request_id && (
-                  <span className="badge">req {result.request_id.slice(0, 8)}</span>
+                  <span className="badge">
+                    req {result.request_id.slice(0, 8)}
+                  </span>
                 )}
               </div>
             </div>
             {result.judge?.reason && (
               <p className="muted judge-note">
-                ⚖️ {result.judge.judge_model}: {result.judge.reason}
+                judge · {result.judge.judge_model} — {result.judge.reason}
               </p>
             )}
             <p className="answer">
-              {result.answer ?? "All models failed — check the candidates below."}
+              {result.answer ??
+                "All models failed — check the candidates below."}
             </p>
           </div>
 
-          <h4 className="section-label">The race — every model’s answer</h4>
+          <h4 className="section-label">the race — all candidates</h4>
           <div className="grid">
             {result.candidates.map((c, i) => (
               <article
@@ -143,7 +143,7 @@ export default function AskPanel() {
                 <div className="candidate-head">
                   <h3>{c.name}</h3>
                   {c.was_selected && (
-                    <span className="badge badge-selected">winner</span>
+                    <span className="badge badge-selected">selected</span>
                   )}
                 </div>
                 <div className="meta">
@@ -153,7 +153,9 @@ export default function AskPanel() {
                   {c.latency_ms != null && (
                     <span className="badge">{c.latency_ms} ms</span>
                   )}
-                  {c.tokens != null && <span className="badge">{c.tokens} tok</span>}
+                  {c.tokens != null && (
+                    <span className="badge">{c.tokens} tok</span>
+                  )}
                 </div>
                 {c.agreement != null && (
                   <div className="agreement">

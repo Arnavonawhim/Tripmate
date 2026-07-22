@@ -3,6 +3,31 @@
 import { useCallback, useEffect, useState } from "react"
 import { fetchMetrics, type ModelStats } from "@/lib/api"
 
+function CountUp({ value, suffix = "" }: { value: number; suffix?: string }) {
+  const [display, setDisplay] = useState(0)
+
+  useEffect(() => {
+    let frame: number
+    const started = performance.now()
+    const duration = 900
+    const step = (t: number) => {
+      const p = Math.min(1, (t - started) / duration)
+      const eased = 1 - Math.pow(1 - p, 3)
+      setDisplay(Math.round(value * eased))
+      if (p < 1) frame = requestAnimationFrame(step)
+    }
+    frame = requestAnimationFrame(step)
+    return () => cancelAnimationFrame(frame)
+  }, [value])
+
+  return (
+    <>
+      {display}
+      {suffix}
+    </>
+  )
+}
+
 export default function MetricsPanel() {
   const [stats, setStats] = useState<ModelStats[]>([])
   const [loading, setLoading] = useState(false)
@@ -40,7 +65,9 @@ export default function MetricsPanel() {
     <section className="panel fade-up">
       <div className="stats-row">
         <div className="stat-card">
-          <div className="stat-value">{totalCalls}</div>
+          <div className="stat-value">
+            <CountUp value={totalCalls} />
+          </div>
           <div className="stat-label">model calls logged</div>
         </div>
         <div className="stat-card">
@@ -49,7 +76,11 @@ export default function MetricsPanel() {
         </div>
         <div className="stat-card">
           <div className="stat-value">
-            {avgLatency != null ? `${avgLatency} ms` : "—"}
+            {avgLatency != null ? (
+              <CountUp value={avgLatency} suffix=" ms" />
+            ) : (
+              "—"
+            )}
           </div>
           <div className="stat-label">avg latency across models</div>
         </div>
@@ -57,7 +88,7 @@ export default function MetricsPanel() {
 
       <div className="row">
         <button className="btn btn-ghost" onClick={refresh} disabled={loading}>
-          {loading ? "Loading..." : "↻ Refresh"}
+          {loading ? "loading…" : "refresh"}
         </button>
         <span className="muted">
           Win rate, latency and agreement per model — live from Postgres.

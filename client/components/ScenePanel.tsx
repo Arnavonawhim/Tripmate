@@ -61,9 +61,9 @@ export default function ScenePanel() {
           <img className="preview" src={preview} alt="scene preview" />
         ) : (
           <div className="dropzone-inner">
-            <div className="dropzone-icon">◉</div>
+            <div className="dropzone-icon">+</div>
             <p>
-              <strong>Drop a photo</strong>, click to browse, or open your
+              <strong>Drop a photograph</strong>, click to browse, or open the
               camera on mobile
             </p>
             <p className="muted">landmarks · menus · signs · street scenes</p>
@@ -75,7 +75,7 @@ export default function ScenePanel() {
         className="question"
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
-        placeholder='Ask about the scene — "translate this menu", "what landmark is this?"'
+        placeholder="Translate this menu… what landmark is this…"
       />
 
       <div className="row">
@@ -105,17 +105,15 @@ export default function ScenePanel() {
 
       {result && (
         <div className="card winner fade-up">
+          <p className="micro-label">scene report — vision worker</p>
           <div className="winner-head">
-            <h3>👁️ Scene answer</h3>
+            <h3>{result.provider ?? "vision"}</h3>
             <div className="meta">
-              {result.provider && (
-                <span className="badge badge-model">{result.provider}</span>
-              )}
               {result.latency_ms != null && (
                 <span className="badge">{result.latency_ms} ms</span>
               )}
               {result.cached && (
-                <span className="badge badge-cached">⚡ cached</span>
+                <span className="badge badge-cached">cached</span>
               )}
             </div>
           </div>
