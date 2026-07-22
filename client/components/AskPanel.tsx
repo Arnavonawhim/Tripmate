@@ -3,6 +3,19 @@
 import { useState } from "react"
 import { ask, type AskResult, type Strategy } from "@/lib/api"
 
+const STRATEGIES: { value: Strategy; label: string; hint: string }[] = [
+  {
+    value: "semantic",
+    label: "Semantic vote",
+    hint: "models vote by embedding similarity",
+  },
+  {
+    value: "judge",
+    label: "LLM judge",
+    hint: "a strong model picks the best answer",
+  },
+]
+
 export default function AskPanel() {
   const [prompt, setPrompt] = useState("")
   const [strategy, setStrategy] = useState<Strategy>("semantic")
@@ -16,7 +29,7 @@ export default function AskPanel() {
     setError(null)
     setResult(null)
     try {
-      setResult(await ask(prompt.trim(), strategy))
+      setResult(await ask(prompt, strategy))
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -24,88 +37,146 @@ export default function AskPanel() {
     }
   }
 
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) submit()
+  }
+
   return (
-    <div className="panel">
-      <textarea
-        value={prompt}
-        onChange={(e) => setPrompt(e.target.value)}
-        placeholder="Ask anything - the router fans it out to every active model in parallel..."
-      />
-      <div className="row">
-        <select
-          value={strategy}
-          onChange={(e) => setStrategy(e.target.value as Strategy)}
-        >
-          <option value="semantic">semantic consensus</option>
-          <option value="judge">LLM as judge</option>
-        </select>
-        <button
-          className="primary"
-          onClick={submit}
-          disabled={loading || !prompt.trim()}
-        >
-          {loading ? "Running consensus..." : "Ask"}
-        </button>
+    <section className="panel fade-up">
+      <div className="composer">
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder='Ask anything — "3 hidden gems near the Louvre", "is street food in Bangkok safe?", "draft a 2-day Kyoto plan"...'
+        />
+        <div className="composer-bar">
+          <div className="seg">
+            {STRATEGIES.map((s) => (
+              <button
+                key={s.value}
+                title={s.hint}
+                className={`seg-btn ${strategy === s.value ? "active" : ""}`}
+                onClick={() => setStrategy(s.value)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={submit}
+            disabled={loading || !prompt.trim()}
+          >
+            {loading ? (
+              <>
+                <span className="spinner" /> racing models
+              </>
+            ) : (
+              <>
+                Run consensus <span className="btn-arrow">→</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
+      {loading && (
+        <div className="grid">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="card skeleton-card"
+              style={{ animationDelay: `${i * 120}ms` }}
+            >
+              <div className="skeleton skeleton-title" />
+              <div className="skeleton skeleton-line" />
+              <div className="skeleton skeleton-line" />
+              <div className="skeleton skeleton-line short" />
+            </div>
+          ))}
+        </div>
+      )}
+
       {error && (
-        <div className="card">
+        <div className="card fade-up">
           <p className="error-text">{error}</p>
         </div>
       )}
 
       {result && (
         <>
-          <div className="card winner">
-            <h3>Winner: {result.chosen ?? "no model succeeded"}</h3>
-            <div className="meta">
-              <span className="badge">{result.strategy}</span>
-              {result.cached && <span className="badge cached">cached</span>}
-              {result.request_id && (
-                <span className="badge">req {result.request_id.slice(0, 8)}</span>
-              )}
+          <div className="card winner fade-up">
+            <div className="winner-head">
+              <h3>
+                <span className="crown">👑</span>
+                {result.chosen ?? "no model succeeded"}
+              </h3>
+              <div className="meta">
+                <span className="badge badge-model">{result.strategy}</span>
+                {result.cached && (
+                  <span className="badge badge-cached">⚡ cached</span>
+                )}
+                {result.request_id && (
+                  <span className="badge">req {result.request_id.slice(0, 8)}</span>
+                )}
+              </div>
             </div>
             {result.judge?.reason && (
-              <p className="muted">
-                Judge ({result.judge.judge_model}): {result.judge.reason}
+              <p className="muted judge-note">
+                ⚖️ {result.judge.judge_model}: {result.judge.reason}
               </p>
             )}
             <p className="answer">
-              {result.answer ?? "All models failed - check the candidates below."}
+              {result.answer ?? "All models failed — check the candidates below."}
             </p>
           </div>
 
+          <h4 className="section-label">The race — every model’s answer</h4>
           <div className="grid">
-            {result.candidates.map((c) => (
-              <div key={c.name} className="card">
-                <h3>{c.name}</h3>
-                <div className="meta">
+            {result.candidates.map((c, i) => (
+              <article
+                key={c.name}
+                className={`card candidate fade-up ${c.was_selected ? "picked" : ""}`}
+                style={{ animationDelay: `${i * 90}ms` }}
+              >
+                <div className="candidate-head">
+                  <h3>{c.name}</h3>
                   {c.was_selected && (
-                    <span className="badge selected">selected</span>
+                    <span className="badge badge-selected">winner</span>
                   )}
-                  <span className={`badge ${c.ok ? "ok" : "err"}`}>
+                </div>
+                <div className="meta">
+                  <span className={`badge ${c.ok ? "badge-ok" : "badge-err"}`}>
                     {c.ok ? "ok" : "failed"}
                   </span>
                   {c.latency_ms != null && (
                     <span className="badge">{c.latency_ms} ms</span>
                   )}
-                  {c.tokens != null && (
-                    <span className="badge">{c.tokens} tok</span>
-                  )}
-                  {c.agreement != null && (
-                    <span className="badge">agreement {c.agreement}</span>
-                  )}
+                  {c.tokens != null && <span className="badge">{c.tokens} tok</span>}
                 </div>
+                {c.agreement != null && (
+                  <div className="agreement">
+                    <div className="agreement-bar">
+                      <div
+                        style={{
+                          width: `${Math.min(100, Math.round(c.agreement * 100))}%`,
+                        }}
+                      />
+                    </div>
+                    <span className="muted">agreement {c.agreement}</span>
+                  </div>
+                )}
                 {c.ok ? (
-                  <p className="answer">{c.text}</p>
+                  <p className="answer clamp">{c.text}</p>
                 ) : (
                   <p className="error-text">{c.error}</p>
                 )}
-              </div>
+              </article>
             ))}
           </div>
         </>
       )}
-    </div>
+    </section>
   )
 }
