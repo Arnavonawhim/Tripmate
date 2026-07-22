@@ -1,3 +1,4 @@
+import os
 import time
 import httpx
 import json
@@ -43,13 +44,15 @@ async def call_model(
         "tokens": None,
         "error": str(e),}
 
+EMBED_URL = os.environ.get("embed_url", "http://localhost:11434/v1/embeddings")
+
 async def embed_text(
     client: httpx.AsyncClient,
     text: str,
-    base_url: str = "http://localhost:11434/v1/embeddings",
+    base_url: str | None = None,
     model: str = "nomic-embed-text",
 ) -> list[float]:
-    resp = await client.post(base_url, json={"model": model, "input": text})
+    resp = await client.post(base_url or EMBED_URL, json={"model": model, "input": text})
     resp.raise_for_status()
     return resp.json()["data"][0]["embedding"]
 
