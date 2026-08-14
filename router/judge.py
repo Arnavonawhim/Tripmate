@@ -31,9 +31,9 @@ async def judge_best(client, prompt: str, successful: list[dict]):
     "You are a strict evaluator. Given a user question and several candidate "
     "answers, choose the SINGLE best one by correctness, completeness, and "
     "relevance. Respond with ONLY minified JSON of the form "
-    '{"best": <1-based number>, "reason": "<one short sentence>"}.nn'
-    f"Question:n{prompt}nn"
-    f"Candidate answers:n{listing}nn"
+    '{"best": <1-based number>, "reason": "<one short sentence>"}.\n\n'
+    f"Question:n{prompt}\n\n"
+    f"Candidate answers:n{listing}\n\n"
     "JSON verdict:")
 
     res = await call_model(client, judge_model, judge_prompt)

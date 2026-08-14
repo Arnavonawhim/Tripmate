@@ -1,7 +1,7 @@
 export const ROUTER_URL =
-  process.env.NEXT_PUBLIC_ROUTER_URL ?? "https://tripmate-1-0qh8.onrender.com"
+  process.env.NEXT_PUBLIC_ROUTER_URL ?? "http://127.0.0.1:8000"
 export const VISION_URL =
-  process.env.NEXT_PUBLIC_VISION_URL ?? "https://tripmate-w0hm.onrender.com"
+  process.env.NEXT_PUBLIC_VISION_URL ?? "http://127.0.0.1:8000"
 
 export type Strategy = "semantic" | "judge"
 
