@@ -1,7 +1,9 @@
 export const ROUTER_URL =
   process.env.NEXT_PUBLIC_ROUTER_URL ?? "http://127.0.0.1:8000"
+// vision-worker runs on :8001 — the previous :8000 fallback silently pointed
+// scene requests at the router whenever NEXT_PUBLIC_VISION_URL was unset.
 export const VISION_URL =
-  process.env.NEXT_PUBLIC_VISION_URL ?? "http://127.0.0.1:8000"
+  process.env.NEXT_PUBLIC_VISION_URL ?? "http://127.0.0.1:8001"
 
 export type Strategy = "semantic" | "judge"
 

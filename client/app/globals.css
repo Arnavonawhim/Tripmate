@@ -1,0 +1,397 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================================================
+   TRIPMATE DESIGN TOKENS
+   Palette anchored on Authentic Teal #035352 + Sidecar Yellow #F3E8BC.
+   ========================================================================== */
+
+@theme {
+  /* --- brand teal scale --- */
+  --color-brand-50: #eff6f4;
+  --color-brand-100: #dce9e6;
+  --color-brand-200: #a8ccc9;
+  --color-brand-300: #6ba9a6;
+  --color-brand-400: #2f8a87;
+  --color-brand-500: #0a6e6c;
+  --color-brand-600: #056160;
+  --color-brand-700: #035352; /* Authentic Teal — the brand */
+  --color-brand-800: #023f3e;
+  --color-brand-900: #012c2b;
+  --color-brand-950: #011a19;
+
+  /* --- warm sand scale --- */
+  --color-sand-50: #fdfbf3;
+  --color-sand-100: #fbf7ea;
+  --color-sand-200: #f3e8bc; /* Sidecar Yellow — the accent */
+  --color-sand-300: #e4d6a6;
+  --color-sand-400: #cfbc85;
+  --color-sand-500: #b09f6b;
+
+  /* --- ink --- */
+  --color-ink-900: #06201f;
+  --color-ink-700: #123c3a;
+  --color-ink-500: #4e6b68;
+  --color-ink-300: #8aa3a0;
+
+  --color-paper: #fffdf7;
+  --color-rust: #8c3a1e;
+  --color-moss: #5d7a4a;
+
+  /* --- type --- */
+  --font-display: var(--font-fraunces), "Iowan Old Style", Palatino, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  /* --- motion --- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* --- editorial rhythm --- */
+  --spacing-section: 7.5rem;
+  --spacing-gutter: 1.5rem;
+}
+
+/* ==========================================================================
+   shadcn/ui token contract — mapped onto the brand palette so every
+   primitive inherits Tripmate rather than looking like stock shadcn.
+   ========================================================================== */
+
+:root {
+  --radius: 0.5rem;
+
+  --background: #fbf7ea;
+  --foreground: #06201f;
+
+  --card: #fffdf7;
+  --card-foreground: #06201f;
+
+  --popover: #fffdf7;
+  --popover-foreground: #06201f;
+
+  --primary: #035352;
+  --primary-foreground: #fbf7ea;
+
+  --secondary: #f3e8bc;
+  --secondary-foreground: #023f3e;
+
+  --muted: #eff6f4;
+  --muted-foreground: #4e6b68;
+
+  --accent: #f3e8bc;
+  --accent-foreground: #023f3e;
+
+  --destructive: #8c3a1e;
+
+  --border: #e4d6a6;
+  --input: #d9cfae;
+  --ring: #035352;
+
+  --chart-1: #035352;
+  --chart-2: #cfbc85;
+  --chart-3: #5d7a4a;
+  --chart-4: #0a6e6c;
+  --chart-5: #8c3a1e;
+}
+
+.dark {
+  --background: #011a19;
+  --foreground: #f0ece0;
+
+  --card: #012c2b;
+  --card-foreground: #f0ece0;
+
+  --popover: #012c2b;
+  --popover-foreground: #f0ece0;
+
+  --primary: #f3e8bc;
+  --primary-foreground: #012c2b;
+
+  --secondary: #023f3e;
+  --secondary-foreground: #f3e8bc;
+
+  --muted: #023f3e;
+  --muted-foreground: #a8ccc9;
+
+  --accent: #035352;
+  --accent-foreground: #f3e8bc;
+
+  --destructive: #c9603f;
+
+  --border: rgba(243, 232, 188, 0.16);
+  --input: rgba(243, 232, 188, 0.22);
+  --ring: #cfbc85;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ==========================================================================
+   BASE
+   ========================================================================== */
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    overflow-x: clip;
+  }
+
+  ::selection {
+    background: var(--color-sand-200);
+    color: var(--color-brand-900);
+  }
+
+  .dark ::selection {
+    background: var(--color-brand-700);
+    color: var(--color-sand-100);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand-700);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .dark :focus-visible {
+    outline-color: var(--color-sand-200);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display;
+    font-optical-sizing: auto;
+    text-wrap: balance;
+  }
+
+  /* Lenis smooth scroll */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+  .lenis.lenis-stopped {
+    overflow: hidden;
+  }
+}
+
+/* ==========================================================================
+   EDITORIAL UTILITIES
+   ========================================================================== */
+
+@utility eyebrow {
+  @apply font-sans text-[0.6875rem] font-medium uppercase tracking-[0.18em];
+}
+
+@utility rule-line {
+  @apply relative;
+  &::after {
+    content: "";
+    @apply absolute inset-x-0 -bottom-px h-px;
+    background: linear-gradient(
+      to right,
+      var(--color-sand-400),
+      transparent 65%
+    );
+  }
+}
+
+/* Numerals that line up in tables and price rows */
+@utility tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* ==========================================================================
+   TEXTURE — a barely-there grain, ~3% opacity. Should read as paper, not noise.
+   ========================================================================== */
+
+.grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+.grain-fixed::before {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  opacity: 0.028;
+}
+
+/* ==========================================================================
+   MOTION PRIMITIVES
+   ========================================================================== */
+
+@keyframes marquee-track {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee-track 42s linear infinite;
+}
+
+.marquee-host:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes caret-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.caret {
+  display: inline-block;
+  width: 0.55ch;
+  height: 1.05em;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: caret-blink 1s steps(1) infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 253, 247, 0.45),
+    transparent
+  );
+  animation: shimmer 1.8s var(--ease-in-out-soft) infinite;
+}
+
+/* Underline that draws in from the left on hover */
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-repeat: no-repeat;
+  background-position: left 90%;
+  transition: background-size 0.4s var(--ease-out-expo);
+}
+.link-underline:hover,
+.link-underline:focus-visible {
+  background-size: 100% 1px;
+}
+
+/* Slow ambient drift for hero imagery */
+@keyframes slow-pan {
+  0% {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.14) translate3d(-1.2%, -1%, 0);
+  }
+  100% {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+}
+
+.slow-pan {
+  animation: slow-pan 32s var(--ease-in-out-soft) infinite;
+}
+
+/* Hide scrollbar but keep scrolling (chat, mode rail) */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==========================================================================
+   REDUCED MOTION — kill transforms and loops, keep opacity legibility.
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .slow-pan,
+  .marquee-track,
+  .shimmer::after {
+    animation: none !important;
+  }
+
+  .grain::before,
+  .grain-fixed::before {
+    display: none;
+  }
+}
