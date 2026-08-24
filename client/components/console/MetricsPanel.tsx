@@ -126,9 +126,14 @@ export default function MetricsPanel() {
           <tbody>
             {stats.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-5 py-10 text-sand-100/45">
+                {/*<td colSpan={7} className="px-5 py-10 text-sand-100/45">
                   No calls logged yet — run some prompts in the Consensus tab
                   first.
+                </td>
+                */}
+                <td colSpan={7} className="px-5 py-10 text-sand-100/45">
+                  No calls logged yet — send a request through the gateway and
+                   the fleet shows up here.
                 </td>
               </tr>
             )}
