@@ -16,13 +16,18 @@ import {
 } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
 
-const NAV = [
+{/*const NAV = [
   { href: "/destinations", label: "Destinations" },
   { href: "/chat", label: "Assistant" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ]
-
+*/}
+const NAV = [
+  { href: "/chat", label: "Assistant" },
+  { href: "/about", label: "About" },
+  { href: "/console", label: "Console" },
+]
 export function SiteHeader() {
   const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
@@ -124,7 +129,7 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
+          {/*<Link
             href="/console"
             className={cn(
               "hidden text-[0.78rem] tracking-[0.02em] transition-colors duration-300 lg:block",
@@ -135,6 +140,7 @@ export function SiteHeader() {
           >
             Console
           </Link>
+          */}
 
           <Link
             href="/chat"
@@ -177,9 +183,11 @@ export function SiteHeader() {
               </SheetHeader>
 
               <nav className="flex flex-col px-2 py-4" aria-label="Mobile">
-                {[...NAV, { href: "/console", label: "Console" }].map(
+               {/*} {[...NAV, { href: "/console", label: "Console" }].map(
                   (item, i) => (
-                    <SheetClose asChild key={item.href}>
+                    <SheetClose asChild key={item.href}>*/}
+                    {NAV.map((item, i) => (
+                      <SheetClose asChild key={item.href}>
                       <Link
                         href={item.href}
                         className={cn(

@@ -204,3 +204,4 @@ export function DestinationResults({
     </div>
   )
 }
+
