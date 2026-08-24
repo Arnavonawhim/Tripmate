@@ -327,8 +327,8 @@ export function ChatShell() {
             {surface === "ar" ? (
               <ArStage />
             ) : (
-              <div className="flex min-h-[clamp(30rem,72svh,50rem)] flex-col overflow-hidden rounded-[4px] border border-sand-300 bg-sand-50">
-                <div
+             <div className="flex h-[calc(100svh-11rem)] min-h-[34rem] flex-col overflow-hidden rounded-[4px] border border-sand-300 bg-sand-50">
+              <div
                   ref={scrollRef}
                   className="flex-1 space-y-4 overflow-y-auto p-5 sm:p-7"
                 >

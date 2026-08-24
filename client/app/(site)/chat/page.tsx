@@ -38,7 +38,7 @@ export const metadata: Metadata = {
 
 export default function ChatPage() {
   return (
-    <section className="mx-auto max-w-[1240px] px-5 pt-32 pb-24 sm:px-8 sm:pt-40 sm:pb-28">
+    <section className="mx-auto max-w-[1240px] px-5 pt-28 pb-12 sm:px-8 sm:pt-32 sm:pb-16">
       <Reveal>
         <p className="eyebrow text-ink-300">The assistant</p>
         <h1 className="mt-3 max-w-2xl font-display text-[clamp(2.25rem,5.5vw,3.75rem)] leading-[1] font-light tracking-[-0.035em] text-brand-900">
@@ -47,9 +47,9 @@ export default function ChatPage() {
         </h1>
       </Reveal>
 
-      <div className="mt-12">
-        <ChatShell />
-      </div>
+      <div className="mt-8">
+      <ChatShell />
+     </div>
     </section>
   )
 }
