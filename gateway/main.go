@@ -62,10 +62,10 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 		code = http.StatusServiceUnavailable
 	}
 	writeJSON(w, code, map[string]any{
-		"gateway":       "ok",
-		"services":      services,
-		"has_frame":     len(frame) > 0,
-		"agora_ready":   agoraAppID != "" && publicGatewayURL != "",
+		"gateway":        "ok",
+		"services":       services,
+		"has_frame":      len(frame) > 0,
+		"agora_ready":    agoraAppID != "" && publicGatewayURL != "",
 		"tool_llm_ready": toolLLMKey != "",
 	})
 }
