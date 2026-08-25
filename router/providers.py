@@ -45,14 +45,18 @@ async def call_model(
         "error": str(e),}
 
 EMBED_URL = os.environ.get("embed_url", "http://localhost:11434/v1/embeddings")
+EMBED_KEY = os.environ.get("embed_key")
+EMBED_MODEL = os.environ.get("embed_model", "nomic-embed-text")
 
 async def embed_text(
     client: httpx.AsyncClient,
     text: str,
     base_url: str | None = None,
-    model: str = "nomic-embed-text",
-) -> list[float]:
-    resp = await client.post(base_url or EMBED_URL, json={"model": model, "input": text})
+    model: str | None = None,) -> list[float]:
+    headers = {}
+    if EMBED_KEY:
+        headers["Authorization"] = f"Bearer {EMBED_KEY}"
+    resp = await client.post(base_url or EMBED_URL, headers=headers, json={"model": model or EMBED_MODEL, "input": text})
     resp.raise_for_status()
     return resp.json()["data"][0]["embedding"]
 

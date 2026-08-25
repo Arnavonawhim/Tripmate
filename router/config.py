@@ -15,7 +15,9 @@ class Provider:
 
     @property
     def available(self) -> bool:
-        return self.key_env is None or bool(self.api_key)
+        if self.key_env is None:
+            return os.environ.get("enable_local_models", "").lower() in ("1", "true", "yes")
+        return bool(self.api_key)
 
 @dataclass
 class Model:

@@ -26,14 +26,14 @@ async def judge_best(client, prompt: str, successful: list[dict]):
         return r, {r["name"]: 1.0}, {"judge_model": None, "reason": "only one candidate"}
     
     judge_model = pick_judge_model()
-    listing = "nn".join(f"[{i + 1}] {r['text']}" for i, r in enumerate(successful))
+    listing = "\n\n".join(f"[{i + 1}] {r['text']}" for i, r in enumerate(successful))
     judge_prompt = (
     "You are a strict evaluator. Given a user question and several candidate "
     "answers, choose the SINGLE best one by correctness, completeness, and "
     "relevance. Respond with ONLY minified JSON of the form "
     '{"best": <1-based number>, "reason": "<one short sentence>"}.\n\n'
-    f"Question:n{prompt}\n\n"
-    f"Candidate answers:n{listing}\n\n"
+    f"Question:\n{prompt}\n\n"
+    f"Candidate answers:\n{listing}\n\n"
     "JSON verdict:")
 
     res = await call_model(client, judge_model, judge_prompt)
