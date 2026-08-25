@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -56,7 +57,7 @@ func agoraJoinPayload(channel, token, agentName string) map[string]any {
 			"idle_timeout":      120,
 			"advanced_features": map[string]any{
 				"enable_aivad": true,
-				"enable_rtm":   true,
+				"enable_rtm":   false,
 			},
 			"asr": map[string]any{
 				"language": asrLanguage,
@@ -131,7 +132,21 @@ func handleAgentStart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	agentName := fmt.Sprintf("guide-%s-%d", body.Channel, time.Now().Unix())
-	status, raw, err := agoraCall(http.MethodPost, "/join", agoraJoinPayload(body.Channel, body.Token, agentName))
+	agentToken := body.Token
+	if agoraAppCert != "" {
+		agentUID, parseErr := strconv.ParseUint(agoraAgentUID, 10, 32)
+		if parseErr != nil {
+			http.Error(w, `{"error":"AGORA_AGENT_UID must be a plain number"}`, http.StatusPreconditionFailed)
+			return
+		}
+		minted, mintErr := buildRTCToken(agoraAppID, agoraAppCert, body.Channel, uint32(agentUID), tokenTTLSeconds)
+		if mintErr != nil {
+			http.Error(w, `{"error":"agent token build failed"}`, http.StatusInternalServerError)
+			return
+		}
+		agentToken = minted
+	}
+	status, raw, err := agoraCall(http.MethodPost, "/join", agoraJoinPayload(body.Channel, agentToken, agentName))
 	if err != nil {
 		http.Error(w, "agora error: "+err.Error(), http.StatusBadGateway)
 		return
