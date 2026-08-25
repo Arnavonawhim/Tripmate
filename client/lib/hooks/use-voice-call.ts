@@ -4,9 +4,12 @@ import { useCallback, useRef, useState } from "react"
 import type { IAgoraRTCClient, IMicrophoneAudioTrack } from "agora-rtc-sdk-ng"
 import { GATEWAY_URL } from "@/lib/api"
 
+
 export type CallStatus = "idle" | "connecting" | "live" | "error"
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID ?? ""
+const [guideJoined, setGuideJoined] = useState(false)
+const [agentId, setAgentId] = useState<string | null>(null)
 
 export function useVoiceCall() {
   const [status, setStatus] = useState<CallStatus>("idle")
@@ -31,7 +34,10 @@ export function useVoiceCall() {
     await clientRef.current?.leave()
     clientRef.current = null
     setMuted(false)
+    setGuideJoined(false)
+    setAgentId(null)
     setStatus("idle")
+    return { status, error, muted, guideJoined, agentId, join, leave, toggleMute }
   }, [])
 
   const join = useCallback(async () => {
@@ -50,6 +56,8 @@ export function useVoiceCall() {
         await client.subscribe(user, mediaType)
         if (mediaType === "audio") user.audioTrack?.play()
       })
+      client.on("user-joined", () => setGuideJoined(true))
+      client.on("user-left", () => setGuideJoined(false))
       const channel = `tripmate-${Math.random().toString(36).slice(2, 8)}`
       const tokenRes = await fetch(`${GATEWAY_URL}/rtc-token`, {
       method: "POST",
@@ -74,6 +82,7 @@ export function useVoiceCall() {
         throw new Error(String(data.error ?? data.detail ?? `agent start failed: ${res.status}`))
       }
       agentIdRef.current = typeof data.agent_id === "string" ? data.agent_id : null
+      setAgentId(agentIdRef.current)
       setStatus("live")
     } catch (e) {
       await leave()

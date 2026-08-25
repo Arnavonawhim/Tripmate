@@ -155,6 +155,7 @@ func main() {
 	mux.HandleFunc("/debug/tool", handleDebugTool)
 	mux.HandleFunc("/tts", handleTTS)
 	mux.HandleFunc("/rtc-token", handleRTCToken)
+	mux.HandleFunc("/agent/status", handleAgentStatus)
 
 	srv := &http.Server{
 		Addr:              ":" + gatewayPort,

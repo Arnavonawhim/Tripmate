@@ -12,7 +12,8 @@ import (
 )
 
 func agoraBasicAuth() string {
-	return "Basic " + base64.StdEncoding.EncodeToString([]byte(agoraCustomerID+":"+agoraCustomerSec))}
+	return "Basic " + base64.StdEncoding.EncodeToString([]byte(agoraCustomerID+":"+agoraCustomerSec))
+}
 
 func ttsConfig() map[string]any {
 	switch strings.ToLower(ttsVendor) {
@@ -29,10 +30,10 @@ func ttsConfig() map[string]any {
 		return map[string]any{
 			"vendor": "sarvam",
 			"params": map[string]any{
-				"key":              ttsKey,
-				"target_language":  getenv("TTS_TARGET_LANGUAGE", "hi-IN"),
-				"speaker":          getenv("TTS_SPEAKER", "anushka"),
-				"model":            getenv("TTS_MODEL_ID", "bulbul:v2"),
+				"key":             ttsKey,
+				"target_language": getenv("TTS_TARGET_LANGUAGE", "hi-IN"),
+				"speaker":         getenv("TTS_SPEAKER", "anushka"),
+				"model":           getenv("TTS_MODEL_ID", "bulbul:v2"),
 			},
 		}
 	default:
@@ -47,12 +48,12 @@ func agoraJoinPayload(channel, token, agentName string) map[string]any {
 	return map[string]any{
 		"name": agentName,
 		"properties": map[string]any{
-			"channel":          channel,
-			"token":            token,
-			"agent_rtc_uid":    agoraAgentUID,
-			"remote_rtc_uids":  []string{"*"},
+			"channel":           channel,
+			"token":             token,
+			"agent_rtc_uid":     agoraAgentUID,
+			"remote_rtc_uids":   []string{"*"},
 			"enable_string_uid": false,
-			"idle_timeout":     120,
+			"idle_timeout":      120,
 			"advanced_features": map[string]any{
 				"enable_aivad": true,
 				"enable_rtm":   true,
@@ -97,7 +98,8 @@ func agoraCall(method, path string, payload any) (int, []byte, error) {
 	}
 	defer resp.Body.Close()
 	raw, _ := io.ReadAll(resp.Body)
-	return resp.StatusCode, raw, nil}
+	return resp.StatusCode, raw, nil
+}
 
 func handleAgentStart(w http.ResponseWriter, r *http.Request) {
 	writeCORS(w)
@@ -161,6 +163,28 @@ func handleAgentStop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	broadcast("agent_stopped", map[string]any{"agent_id": body.AgentID})
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = w.Write(raw)
+}
+
+func handleAgentStatus(w http.ResponseWriter, r *http.Request) {
+	writeCORS(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	agentID := r.URL.Query().Get("agent_id")
+	if agentID == "" {
+		http.Error(w, `{"error":"agent_id query param is required"}`, http.StatusBadRequest)
+		return
+	}
+
+	status, raw, err := agoraCall(http.MethodGet, "/agents/"+agentID, nil)
+	if err != nil {
+		http.Error(w, "agora error: "+err.Error(), http.StatusBadGateway)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_, _ = w.Write(raw)
