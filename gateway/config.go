@@ -53,6 +53,7 @@ var (
 	agoraCustomerSec = getenv("AGORA_CUSTOMER_SECRET", "")
 	agoraConvoAIBase = getenv("AGORA_CONVOAI_BASE", "https://api.agora.io/api/conversational-ai-agent/v2/projects")
 	agoraAgentUID    = getenv("AGORA_AGENT_UID", "1001")
+	agoraAppCert     = getenv("AGORA_APP_CERTIFICATE", "")
 
 	publicGatewayURL = getenv("PUBLIC_GATEWAY_URL", "")
 

@@ -51,7 +51,16 @@ export function useVoiceCall() {
         if (mediaType === "audio") user.audioTrack?.play()
       })
       const channel = `tripmate-${Math.random().toString(36).slice(2, 8)}`
-      await client.join(APP_ID, channel, null, null)
+      const tokenRes = await fetch(`${GATEWAY_URL}/rtc-token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channel, uid: 0 }),})
+      const tokenData = (await tokenRes.json().catch(() => ({}))) as Record<string, unknown>
+      if (!tokenRes.ok) {
+      throw new Error(String(tokenData.error ?? `token failed: ${tokenRes.status}`))}
+      const rtcToken =typeof tokenData.token === "string" && tokenData.token !== ""
+            ? tokenData.token : null
+      await client.join(APP_ID, channel, rtcToken, null)
       const mic = await AgoraRTC.createMicrophoneAudioTrack()
       micRef.current = mic
       await client.publish([mic])

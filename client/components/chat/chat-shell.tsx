@@ -328,12 +328,6 @@ export function ChatShell() {
             )
           })}
         </div>
-
-        <p className="mt-6 hidden border-t border-sand-300 pt-4 text-[0.75rem] leading-relaxed text-ink-300 lg:block">
-          Chat mode talks to the router on{" "}
-          <code className="text-ink-500">:8000</code>. AR mode is layout only
-          for now.
-        </p>
       </aside>
 
       {/* --------------------------- active panel --------------------------- */}
