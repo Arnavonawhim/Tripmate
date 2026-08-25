@@ -41,8 +41,8 @@
   --color-moss: #5d7a4a;
 
   /* --- type --- */
-  --font-display: var(--font-fraunces), "Iowan Old Style", Palatino, Georgia, serif;
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-switzer), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: var(--font-nippo), ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   /* --- motion --- */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -201,7 +201,7 @@
   h3,
   h4 {
     @apply font-display;
-    font-optical-sizing: auto;
+    font-weight: 700;
     text-wrap: balance;
   }
 

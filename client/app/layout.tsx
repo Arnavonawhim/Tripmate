@@ -1,20 +1,21 @@
 import type { Metadata } from "next"
-import { Fraunces, Inter } from "next/font/google"
+import localFont from "next/font/local"
 import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "@/components/providers"
 import "./globals.css"
 
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
+const switzer = localFont({
+  src: "./fonts/Switzer-Variable.woff2",
+  variable: "--font-switzer",
   display: "swap",
-  axes: ["SOFT", "WONK", "opsz"],
+  weight: "100 900",
 })
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
+const nippo = localFont({
+  src: "./fonts/Nippo-Variable.woff2",
+  variable: "--font-nippo",
   display: "swap",
+  weight: "100 900",
 })
 
 export const metadata: Metadata = {
@@ -36,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
+    <html lang="en" className={`${switzer.variable} ${nippo.variable}`}>
       <body className="grain-fixed">
         <Providers>{children}</Providers>
         <Toaster
