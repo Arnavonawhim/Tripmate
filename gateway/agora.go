@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -56,9 +57,8 @@ func agoraJoinPayload(channel, token, agentName string) map[string]any {
 			"enable_string_uid": false,
 			"idle_timeout":      120,
 			"advanced_features": map[string]any{
-				"enable_aivad": true,
-				"enable_rtm":   false,
-			},
+				"enable_aivad": enableAIVAD,
+				"enable_rtm":   false},
 			"asr": map[string]any{
 				"language": asrLanguage,
 			},
@@ -151,6 +151,7 @@ func handleAgentStart(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "agora error: "+err.Error(), http.StatusBadGateway)
 		return
 	}
+	log.Printf("agent join channel=%s uid=%s asr=%s aivad=%t status=%d body=%s", body.Channel, agoraAgentUID, asrLanguage, enableAIVAD, status, string(raw))
 	broadcast("agent_started", map[string]any{"channel": body.Channel, "status": status})
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

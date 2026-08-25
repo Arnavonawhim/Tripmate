@@ -63,4 +63,5 @@ var (
 	ttsVoice    = getenv("TTS_VOICE_ID", "")
 
 	nominatimBase = getenv("NOMINATIM_BASE", "https://nominatim.openstreetmap.org")
+	enableAIVAD = getenv("ENABLE_AIVAD", "false") == "true"
 )
