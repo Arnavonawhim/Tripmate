@@ -1,4 +1,5 @@
 "use client"
+{/*"use client"
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "motion/react"
@@ -25,7 +26,7 @@ export function ConsoleShell() {
   return (
     <div>
       {/* --------------------------- status --------------------------- */}
-      <p className="flex flex-wrap items-center gap-2 text-[0.82rem] text-sand-100/55">
+     {/* <p className="flex flex-wrap items-center gap-2 text-[0.82rem] text-sand-100/55">
         <span
           className={cn(
             "h-2 w-2 shrink-0 rounded-full",
@@ -50,7 +51,7 @@ export function ConsoleShell() {
       </p>
 
       {/* ---------------------------- tabs ---------------------------- */}
-      <nav
+      {/*<nav
         className="no-scrollbar mt-8 flex gap-1 overflow-x-auto border-b border-sand-100/12 pb-px"
         aria-label="Console sections"
       >
@@ -82,7 +83,7 @@ export function ConsoleShell() {
       </nav>
 
       {/* --------------------------- panels --------------------------- */}
-      <div className="mt-10">
+      {/*<div className="mt-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={tab}
@@ -97,6 +98,50 @@ export function ConsoleShell() {
             {tab === "metrics" && <MetricsPanel />}
           </motion.div>
         </AnimatePresence>
+      </div>
+    </div>
+  )
+}
+      */}
+
+
+import { useRouterHealth } from "@/lib/hooks/use-router-health"
+import MetricsPanel from "@/components/console/MetricsPanel"
+import { cn } from "@/lib/utils"
+
+export function ConsoleShell() {
+  const { healthy, models } = useRouterHealth()
+
+  return (
+    <div>
+      {/* --------------------------- status --------------------------- */}
+      <p className="flex flex-wrap items-center gap-2 border-b border-sand-100/12 pb-6 text-[0.82rem] text-sand-100/55">
+        <span
+          className={cn(
+            "h-2 w-2 shrink-0 rounded-full",
+            healthy === false
+              ? "bg-rust"
+              : healthy === null
+                ? "bg-sand-400"
+                : "bg-moss"
+          )}
+        />
+        router{" "}
+        {healthy === null
+          ? "checking…"
+          : healthy
+            ? "online"
+            : "offline — start it on :8000"}
+        {models.length > 0 && (
+          <span className="text-sand-100/40">
+            · fleet: {models.map((m) => m.name).join(" / ")}
+          </span>
+        )}
+      </p>
+
+      {/* -------------------------- telemetry ------------------------- */}
+      <div className="mt-10">
+        <MetricsPanel />
       </div>
     </div>
   )

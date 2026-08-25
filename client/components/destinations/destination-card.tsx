@@ -99,9 +99,11 @@ export function DestinationCard({
         </div>
 
         {/* index marker */}
+        {
         <span className="absolute top-4 left-4 font-display text-xs tracking-[0.18em] text-sand-100/70 tabular-nums">
           {String(index + 1).padStart(2, "0")}
         </span>
+        }
 
         {/* price sits on the image, right where the eye lands last */}
         <span className="tnum absolute bottom-4 left-4 rounded-full bg-sand-200 px-3 py-1 text-[0.78rem] font-semibold text-brand-900">
@@ -152,3 +154,4 @@ export function DestinationCard({
     </motion.article>
   )
 }
+
