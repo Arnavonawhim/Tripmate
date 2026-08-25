@@ -140,23 +140,20 @@ func handleDebugTool(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("/", handleRoot)
 	mux.HandleFunc("/health", handleHealth)
 	mux.HandleFunc("/ask", handleAsk)
 	mux.HandleFunc("/stream", handleStream)
 	mux.HandleFunc("/scene", handleScene)
-
 	mux.HandleFunc("/v1/chat/completions", handleChatCompletions)
 	mux.HandleFunc("/context", handleContext)
 	mux.HandleFunc("/frame", handleFrame)
 	mux.HandleFunc("/events", handleEvents)
-
 	mux.HandleFunc("/agent/start", handleAgentStart)
 	mux.HandleFunc("/agent/stop", handleAgentStop)
-
 	mux.HandleFunc("/debug/state", handleDebugState)
 	mux.HandleFunc("/debug/tool", handleDebugTool)
+	mux.HandleFunc("/tts", handleTTS)
 
 	srv := &http.Server{
 		Addr:              ":" + gatewayPort,

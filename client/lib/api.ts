@@ -1,7 +1,7 @@
 export const ROUTER_URL =
   process.env.NEXT_PUBLIC_ROUTER_URL ?? "http://127.0.0.1:8000"
-// vision-worker runs on :8001 — the previous :8000 fallback silently pointed
-// scene requests at the router whenever NEXT_PUBLIC_VISION_URL was unset.
+export const GATEWAY_URL =
+  process.env.NEXT_PUBLIC_GATEWAY_URL ?? "http://127.0.0.1:9000"
 export const VISION_URL =
   process.env.NEXT_PUBLIC_VISION_URL ?? "http://127.0.0.1:8001"
 
@@ -141,5 +141,19 @@ export async function streamAsk(
         // ignore malformed chunks
       }
     }
+  }
+}
+
+export async function fetchSpeech(text: string): Promise<Blob | null> {
+  try {
+    const res = await fetch(`${GATEWAY_URL}/tts`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    })
+    if (!res.ok) return null
+    return await res.blob()
+  } catch {
+    return null
   }
 }

@@ -1,5 +1,5 @@
 "use client"
-
+import { useSpeech } from "@/lib/hooks/use-speech"
 import { useEffect, useRef, useState, type FormEvent } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import {
@@ -11,6 +11,8 @@ import {
   Square,
   View,
   Zap,
+  Volume2,
+  VolumeX,
 } from "lucide-react"
 import { useChat, type ChatMessage, type ChatMode } from "@/lib/hooks/use-chat"
 import { ArStage } from "@/components/chat/ar-stage"
@@ -93,7 +95,11 @@ function TypingDots() {
   )
 }
 
-function Bubble({ message }: { message: ChatMessage }) {
+function Bubble({message,speakingId,onSpeak,}: {
+  message: ChatMessage
+  speakingId: string | null
+  onSpeak: (id: string, text: string) => void
+}) {
   const reduce = useReducedMotion()
   const isUser = message.role === "user"
   const empty = !message.text && message.streaming
@@ -133,6 +139,21 @@ function Bubble({ message }: { message: ChatMessage }) {
             {message.text}
             {message.streaming && <span className="caret ml-0.5" />}
           </p>
+        )}
+        {!isUser && !message.error && !message.streaming && message.text && (
+          <button
+            type="button"
+            onClick={() => onSpeak(message.id, message.text)}
+            aria-label={speakingId === message.id ? "Stop speaking" : "Read aloud"}
+            className="mt-2.5 flex items-center gap-1.5 text-[0.72rem] text-ink-300 transition-colors duration-300 hover:text-brand-700"
+          >
+            {speakingId === message.id ? (
+              <VolumeX className="h-3.5 w-3.5" />
+            ) : (
+              <Volume2 className="h-3.5 w-3.5" />
+            )}
+            {speakingId === message.id ? "Stop" : "Listen"}
+          </button>
         )}
       </div>
     </motion.div>
@@ -241,6 +262,7 @@ export function ChatShell() {
   const [mode, setMode] = useState<ChatMode>("stream")
   const [input, setInput] = useState("")
   const { messages, pending, send, stop } = useChat()
+  const { speakingId, speak } = useSpeech()
   const scrollRef = useRef<HTMLDivElement>(null)
   const reduce = useReducedMotion()
 
@@ -370,8 +392,7 @@ export function ChatShell() {
                   ) : (
                     <AnimatePresence initial={false}>
                       {messages.map((m) => (
-                        <Bubble key={m.id} message={m} />
-                      ))}
+                      <Bubble key={m.id} message={m} speakingId={speakingId} onSpeak={speak} />))}
                     </AnimatePresence>
                   )}
                 </div>
