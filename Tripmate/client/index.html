@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Wanderly — Small-group trips to mountains, islands & backwaters</title>
+<meta name="description" content="Plan curated small-group trips to Ladakh, the Himalayas, island beaches and Kerala backwaters, with an AI travel assistant." />
+<link rel="icon" href="assets/logo.png" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><img src="assets/logo.png" alt="Wanderly logo" />Wanderly</a>
+    <ul class="nav-links">
+      <li><a class="active" href="index.html">Home</a></li>
+      <li><a href="destinations.html">Destinations</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a class="btn" href="chat.html">Start chat</a>
+    <button class="burger" onclick="toggleMenu()" aria-label="Toggle menu">&#9776;</button>
+  </div>
+  <div id="mobileMenu">
+    <a href="index.html">Home</a><a href="destinations.html">Destinations</a>
+    <a href="about.html">About</a><a href="contact.html">Contact</a><a href="chat.html">Start chat</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero">
+    <img src="assets/hero.jpg" alt="Misty green valley at sunrise" />
+    <div class="hero-overlay">
+      <h1>Where do you want to go?</h1>
+      <p>Small-group journeys to high passes, quiet coastlines and slow rivers.</p>
+      <form class="search" onsubmit="handleSearch(event)">
+        <input placeholder="Search destinations" aria-label="Search destinations" />
+        <button class="btn" type="submit">Search</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="chat-band">
+    <div>
+      <h2>Not sure where to start?</h2>
+      <p style="margin:4px 0 0">Ask our AI travel assistant for a plan in seconds.</p>
+    </div>
+    <a class="btn" href="chat.html">Start chat</a>
+  </div>
+
+  <section>
+    <h2 class="section-title">Popular travel</h2>
+    <p class="sub">Tap the small button on a card for two options: details or booking.</p>
+    <div class="grid" id="placeGrid"></div>
+  </section>
+</main>
+
+<footer><div class="wrap foot">
+  <span>&copy; <span id="yr"></span> Wanderly Travel</span>
+  <span><a href="destinations.html">Destinations</a> &middot; <a href="about.html">About</a> &middot; <a href="contact.html">Contact</a> &middot; <a href="chat.html">AI assistant</a></span>
+</div></footer>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>renderPlaces("placeGrid"); document.getElementById("yr").textContent = new Date().getFullYear();</script>
+</body>
+</html>

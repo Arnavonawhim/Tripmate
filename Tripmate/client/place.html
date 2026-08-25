@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Destination — Wanderly</title>
+<meta name="description" content="Trip overview, highlights and pricing for this Wanderly destination." />
+<link rel="icon" href="assets/logo.png" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="index.html"><img src="assets/logo.png" alt="Wanderly logo" />Wanderly</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="destinations.html">Destinations</a></li>
+      <li><a href="about.html">About</a></li>
+      <li><a href="contact.html">Contact</a></li>
+    </ul>
+    <a class="btn" href="chat.html">Start chat</a>
+    <button class="burger" onclick="toggleMenu()" aria-label="Toggle menu">&#9776;</button>
+  </div>
+  <div id="mobileMenu">
+    <a href="index.html">Home</a><a href="destinations.html">Destinations</a>
+    <a href="about.html">About</a><a href="contact.html">Contact</a><a href="chat.html">Start chat</a>
+  </div>
+</header>
+
+<main class="wrap" id="detail" style="max-width:800px;padding-top:28px"></main>
+
+<footer><div class="wrap foot"><span>&copy; <span id="yr"></span> Wanderly Travel</span></div></footer>
+<script src="data.js"></script>
+<script src="app.js"></script>
+<script>renderDetail(); document.getElementById("yr").textContent = new Date().getFullYear();</script>
+</body>
+</html>
