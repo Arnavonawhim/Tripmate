@@ -151,6 +151,15 @@ func handleAgentStart(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "agora error: "+err.Error(), http.StatusBadGateway)
 		return
 	}
+	var joinResp struct {
+		AgentID string `json:"agent_id"`
+	}
+	_ = json.Unmarshal(raw, &joinResp)
+	if status < 300 && joinResp.AgentID != "" {
+		go func(id string) {
+			time.Sleep(3 * time.Second)
+			st, sayRaw, sayErr := agentSpeak(id, getenv("GREETING", "Hey! I am your AR guide. Point your camera at anything and ask me about it."))
+			log.Printf("forced greeting agent=%s status=%d err=%v body=%s", id, st, sayErr, sayRaw)}(joinResp.AgentID)}
 	log.Printf("agent join channel=%s uid=%s asr=%s aivad=%t status=%d body=%s", body.Channel, agoraAgentUID, asrLanguage, enableAIVAD, status, string(raw))
 	broadcast("agent_started", map[string]any{"channel": body.Channel, "status": status})
 	w.Header().Set("Content-Type", "application/json")
@@ -205,3 +214,30 @@ func handleAgentStatus(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(status)
 	_, _ = w.Write(raw)
 }
+
+func agentSpeak(agentID, text string) (int, []byte, error) {
+	return agoraCall(http.MethodPost, "/agents/"+agentID+"/speak", map[string]any{
+		"text":          text,
+		"priority":      "INTERRUPT",
+		"interruptable": true})}
+
+func handleDebugSay(w http.ResponseWriter, r *http.Request) {
+	writeCORS(w)
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusNoContent)
+		return}
+	var body struct {
+		AgentID string `json:"agent_id"`
+		Text    string `json:"text"`
+	}
+	_ = json.NewDecoder(r.Body).Decode(&body)
+	if body.AgentID == "" || body.Text == "" {
+		http.Error(w, `{"error":"agent_id and text are required"}`, http.StatusBadRequest)
+		return}
+	status, raw, err := agentSpeak(body.AgentID, body.Text)
+	if err != nil {
+		http.Error(w, "agora error: "+err.Error(), http.StatusBadGateway)
+		return}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = w.Write(raw)}
