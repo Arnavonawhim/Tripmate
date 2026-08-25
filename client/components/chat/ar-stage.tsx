@@ -13,8 +13,11 @@ import {
   ScanLine,
   Sparkles,
   Video,
+  MicOff
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useAgentEvents } from "@/lib/hooks/use-agent-event"
+import { useVoiceCall } from "@/lib/hooks/use-voice-call"
 
 type ArMode = "call" | "guide"
 
@@ -43,20 +46,27 @@ function ControlButton({
   icon: Icon,
   label,
   tone = "default",
+  active = false,
+  onClick,
 }: {
   icon: React.ElementType
   label: string
   tone?: "default" | "danger"
+  active?: boolean
+  onClick?: () => void
 }) {
   return (
     <button
       type="button"
       aria-label={label}
+      onClick={onClick}
       className={cn(
         "flex h-12 w-12 items-center justify-center rounded-full border transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5",
         tone === "danger"
           ? "border-rust/40 bg-rust/15 text-rust hover:bg-rust/25"
-          : "border-sand-100/20 bg-sand-100/5 text-sand-100/80 hover:border-sand-200 hover:text-sand-200"
+          : active
+            ? "border-sand-200 bg-sand-200 text-brand-900"
+            : "border-sand-100/20 bg-sand-100/5 text-sand-100/80 hover:border-sand-200 hover:text-sand-200"
       )}
     >
       <Icon className="h-4 w-4" />
@@ -84,12 +94,21 @@ function ToolAction({
 }
 
 function VideoCallStage() {
+  const { status, error, muted, join, leave, toggleMute } = useVoiceCall()
+  const { connected, caption } = useAgentEvents()
+  const [showCaptions, setShowCaptions] = useState(true)
+  const live = status === "live"
+
   return (
     <div>
       <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[4px] border border-sand-100/12 bg-brand-900/60">
-        {/* guide tile */}
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-          <div className="flex h-24 w-24 items-center justify-center rounded-full border border-sand-200/25 bg-sand-100/5">
+          <div
+            className={cn(
+              "flex h-24 w-24 items-center justify-center rounded-full border border-sand-200/25 bg-sand-100/5",
+              live && "shimmer"
+            )}
+          >
             <Sparkles className="h-7 w-7 text-sand-200/70" />
           </div>
           <div className="text-center">
@@ -97,29 +116,68 @@ function VideoCallStage() {
               Tripmate guide
             </p>
             <p className="mt-1 text-[0.8rem] text-sand-100/45">
-              not connected — voice layer wires up later
+              {status === "idle" && "ready when you are"}
+              {status === "connecting" && "connecting…"}
+              {status === "live" &&
+                (muted ? "mic muted" : "live — just start talking")}
+              {status === "error" && (error ?? "something went wrong")}
             </p>
+            {!live && status !== "connecting" && (
+              <button
+                type="button"
+                onClick={() => void join()}
+                className="mt-4 rounded-full bg-sand-200 px-6 py-2.5 text-[0.85rem] font-medium text-brand-900 transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:bg-paper"
+              >
+                Start voice call
+              </button>
+            )}
           </div>
         </div>
 
-        {/* self-view PiP */}
         <div className="absolute right-4 bottom-4 flex h-24 w-36 items-center justify-center rounded-[3px] border border-sand-100/15 bg-brand-950/80">
           <p className="text-[0.7rem] text-sand-100/40">you</p>
         </div>
 
-        {/* live captions strip */}
-        <div className="absolute bottom-4 left-4 max-w-[min(28rem,60%)] rounded-[3px] bg-brand-950/70 px-4 py-2.5">
-          <p className="text-[0.82rem] leading-relaxed text-sand-100/70">
-            Captions appear here once the call is live.
-          </p>
-        </div>
+        {showCaptions && (
+          <div className="absolute bottom-4 left-4 max-w-[min(28rem,60%)] rounded-[3px] bg-brand-950/70 px-4 py-2.5">
+            <p className="text-[0.82rem] leading-relaxed text-sand-100/70">
+              {caption ??
+                (live
+                  ? "Say something — captions appear here."
+                  : "Captions appear here once the call is live.")}
+            </p>
+          </div>
+        )}
+
+        {live && !connected && (
+          <div className="absolute top-4 left-4 rounded-full bg-brand-950/70 px-3 py-1.5">
+            <p className="text-[0.72rem] tracking-[0.02em] text-sand-100/55">
+              event stream reconnecting…
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mt-5 flex items-center justify-center gap-3">
-        <ControlButton icon={Mic} label="Mute microphone" />
-        <ControlButton icon={Video} label="Turn off camera" />
-        <ControlButton icon={Captions} label="Toggle captions" />
-        <ControlButton icon={PhoneOff} label="Leave call" tone="danger" />
+        <ControlButton
+          icon={muted ? MicOff : Mic}
+          label={muted ? "Unmute microphone" : "Mute microphone"}
+          active={muted}
+          onClick={() => void toggleMute()}
+        />
+        <ControlButton icon={Video} label="Camera arrives with scan mode" />
+        <ControlButton
+          icon={Captions}
+          label="Toggle captions"
+          active={showCaptions}
+          onClick={() => setShowCaptions((v) => !v)}
+        />
+        <ControlButton
+          icon={PhoneOff}
+          label="Leave call"
+          tone="danger"
+          onClick={() => void leave()}
+        />
       </div>
     </div>
   )
