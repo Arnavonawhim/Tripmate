@@ -18,6 +18,10 @@ import {
 import { cn } from "@/lib/utils"
 import { useAgentEvents } from "@/lib/hooks/use-agent-event"
 import { useVoiceCall} from "@/lib/hooks/use-voice-call"
+import { toast } from "sonner"
+import { GATEWAY_URL } from "@/lib/api"
+import { useContextBeacon } from "@/lib/hooks/use-context-beacon"
+import { useFrameLoop } from "@/lib/hooks/use-frame-loop"
 
 type ArMode = "call" | "guide"
 
@@ -74,27 +78,29 @@ function ControlButton({
   )
 }
 
-/** Guide-mode side action — one per gateway tool. */
 function ToolAction({
   icon: Icon,
   label,
+  onClick,
 }: {
   icon: React.ElementType
   label: string
+  onClick?: () => void
 }) {
   return (
     <button
       type="button"
+      onClick={onClick}
       className="flex w-full items-center gap-2.5 rounded-[4px] border border-sand-100/12 bg-brand-900/45 px-4 py-3 text-left text-[0.83rem] text-sand-100/75 transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:border-sand-200/40 hover:text-sand-200"
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />
       {label}
-    </button>
-  )
+    </button>)
+  
 }
 
 function VideoCallStage() {
-  const { status, error, muted, guideJoined, agentId, join, leave, toggleMute } = useVoiceCall()
+  const { status, error, muted, guideJoined, agentId, agentState, join, leave, toggleMute } = useVoiceCall()
   const { connected, caption } = useAgentEvents()
   const [showCaptions, setShowCaptions] = useState(true)
   const live = status === "live"
@@ -129,6 +135,10 @@ function VideoCallStage() {
             {live && !guideJoined && agentId && (
               <p className="mt-2 font-mono text-[0.68rem] text-sand-100/30">{agentId}</p>
             )}
+            {live && agentState && (
+              <p className="mt-1 font-mono text-[0.68rem] text-sand-100/30">
+                {agentState}
+              </p>)}
             {!live && status !== "connecting" && (
               <button
                 type="button"
@@ -191,11 +201,55 @@ function VideoCallStage() {
 }
 
 function TourGuideStage() {
+  const [scanning, setScanning] = useState(false)
+  const { videoRef, cameraOn, cameraError } = useFrameLoop(scanning)
+  useContextBeacon(scanning)
+
+  const runTool = async (name: string, args: Record<string, unknown>, label: string) => {
+    try {
+      const res = await fetch(`${GATEWAY_URL}/debug/tool`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, args }),
+      })
+      const data = (await res.json()) as Record<string, unknown>
+      toast(label, { description: JSON.stringify(data).slice(0, 220) })
+    } catch (e) {
+      toast(label, { description: e instanceof Error ? e.message : String(e) })
+    }
+  }
+
+  const showMemories = async () => {
+    try {
+      const res = await fetch(`${GATEWAY_URL}/debug/state`)
+      const data = (await res.json()) as {
+        state?: { places?: Record<string, [number, number]> }
+      }
+      const places = Object.keys(data.state?.places ?? {})
+      toast("Memories", {
+        description:
+          places.length > 0
+            ? places.join(", ")
+            : "No places saved yet — ask the guide to remember one.",
+      })
+    } catch (e) {
+      toast("Memories", { description: e instanceof Error ? e.message : String(e) })
+    }
+  }
+
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_15rem]">
-      {/* viewfinder */}
       <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[4px] border border-sand-100/12 bg-brand-900/60">
-        {/* ground reticle */}
+        <video
+          ref={videoRef}
+          playsInline
+          muted
+          autoPlay
+          className={cn(
+            "absolute inset-0 h-full w-full object-cover",
+            !cameraOn && "hidden"
+          )}
+        />
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="relative flex h-32 w-32 items-center justify-center rounded-full border border-dashed border-sand-200/35">
             <Crosshair className="h-5 w-5 text-sand-200/60" />
@@ -208,30 +262,43 @@ function TourGuideStage() {
           </p>
           <button
             type="button"
+            onClick={() => setScanning((v) => !v)}
             className="rounded-full bg-sand-200 px-6 py-2.5 text-[0.85rem] font-medium text-brand-900 transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:bg-paper"
           >
-            Place guide
+            {scanning ? "Stop scanning" : "Start scanning"}
           </button>
         </div>
 
         <div className="absolute top-4 left-4 rounded-full bg-brand-950/70 px-3 py-1.5">
           <p className="text-[0.72rem] tracking-[0.02em] text-sand-100/55">
-            camera off — scan mode wires up later
+            {scanning
+              ? cameraOn
+                ? "scanning — the guide sees this"
+                : cameraError ?? "starting camera…"
+              : "camera off — start scanning to share your view"}
           </p>
         </div>
       </div>
 
-      {/* tool rail */}
       <div className="flex flex-col gap-2">
         <h3 className="eyebrow text-sand-100/40">Guide can</h3>
-        <ToolAction icon={MapPin} label="Find nearby" />
-        <ToolAction icon={Save} label="Save this place" />
-        <ToolAction icon={Sparkles} label="Memories" />
-        <ToolAction icon={Languages} label="Translate a sign" />
+        <ToolAction icon={MapPin} label="Find nearby" onClick={() => void runTool("find_nearby", { query: "cafe" }, "Find nearby")}/>
+        <ToolAction
+          icon={Save}
+          label="Save this place"
+          onClick={() => void runTool("save_place", { name: "marked spot" }, "Save this place")}
+        />
+        <ToolAction icon={Sparkles} label="Memories" onClick={() => void showMemories()} />
+        <ToolAction
+          icon={Languages}
+          label="Translate a sign"
+          onClick={() =>
+            void runTool("translate_text", { target_language: "English" }, "Translate a sign")
+          }
+        />
 
         <p className="mt-3 border-t border-sand-100/12 pt-4 text-[0.75rem] leading-relaxed text-sand-100/40">
-          Each action maps to one gateway tool. Wiring comes after the layout
-          settles.
+          Each action fires the same gateway tool the guide uses mid-call.
         </p>
       </div>
     </div>

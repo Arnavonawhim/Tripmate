@@ -9,6 +9,8 @@ import { GATEWAY_URL } from "@/lib/api"
 export type CallStatus = "idle" | "connecting" | "live" | "error"
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID ?? ""
+const [agentState, setAgentState] = useState<string | null>(null)
+const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
 export function useVoiceCall() {
   const [status, setStatus] = useState<CallStatus>("idle")
@@ -35,10 +37,14 @@ export function useVoiceCall() {
 
     micRef.current?.close()
     micRef.current = null
-
+    
     await clientRef.current?.leave()
     clientRef.current = null
-
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
+    }
+    setAgentState(null)
     setMuted(false)
     setGuideJoined(false)
     setAgentId(null)
@@ -146,6 +152,17 @@ export function useVoiceCall() {
 
       setAgentId(agentIdRef.current)
       setStatus("live")
+      pollRef.current = setInterval(async () => {
+      const id = agentIdRef.current
+      if (!id) return
+      try {
+        const res = await fetch(`${GATEWAY_URL}/agent/status?agent_id=${id}`)
+        const info = (await res.json().catch(() => ({}))) as Record<string, unknown>
+        const state = typeof info.status === "string" ? info.status : null
+        const message = typeof info.message === "string" ? info.message : null
+        setAgentState(state ? (message ? `${state} — ${message}` : state) : null)
+      } catch {}
+    }, 5000)
     } catch (e) {
       await leave()
 
