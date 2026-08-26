@@ -100,7 +100,7 @@ function ToolAction({
 }
 
 function VideoCallStage() {
-  const { status, error, muted, guideJoined, agentId, agentState, join, leave, toggleMute } = useVoiceCall()
+  const { status, error, muted, guideJoined, agentId, join, leave, toggleMute } = useVoiceCall()
   const { connected, caption } = useAgentEvents()
   const [showCaptions, setShowCaptions] = useState(true)
   const live = status === "live"
@@ -135,10 +135,6 @@ function VideoCallStage() {
             {live && !guideJoined && agentId && (
               <p className="mt-2 font-mono text-[0.68rem] text-sand-100/30">{agentId}</p>
             )}
-            {live && agentState && (
-              <p className="mt-1 font-mono text-[0.68rem] text-sand-100/30">
-                {agentState}
-              </p>)}
             {!live && status !== "connecting" && (
               <button
                 type="button"
