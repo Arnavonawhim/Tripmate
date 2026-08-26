@@ -1,13 +1,38 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { GATEWAY_URL } from "@/lib/api"
 
 export function useFrameLoop(active: boolean) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [cameraOn, setCameraOn] = useState(false)
   const [cameraError, setCameraError] = useState<string | null>(null)
+
+  const captureNow = useCallback(async () => {
+    const video = videoRef.current
+    if (!video || video.readyState < 2 || !video.videoWidth) return false
+    if (!canvasRef.current) canvasRef.current = document.createElement("canvas")
+    const canvas = canvasRef.current
+    canvas.width = 640
+    canvas.height = Math.round((video.videoHeight / video.videoWidth) * 640)
+    const ctx = canvas.getContext("2d")
+    if (!ctx) return false
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/jpeg", 0.7)
+    )
+    if (!blob) return false
+    const form = new FormData()
+    form.append("image", blob, "frame.jpg")
+    try {
+      const res = await fetch(`${GATEWAY_URL}/frame`, { method: "POST", body: form })
+      return res.ok
+    } catch {
+      return false
+    }
+  }, [])
 
   useEffect(() => {
     if (!active) return
@@ -38,26 +63,8 @@ export function useFrameLoop(active: boolean) {
 
     void start()
 
-    const canvas = document.createElement("canvas")
-
     const timer = setInterval(() => {
-      const video = videoRef.current
-      if (!video || video.readyState < 2 || !video.videoWidth) return
-      canvas.width = 640
-      canvas.height = Math.round((video.videoHeight / video.videoWidth) * 640)
-      const ctx = canvas.getContext("2d")
-      if (!ctx) return
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) return
-          const form = new FormData()
-          form.append("image", blob, "frame.jpg")
-          void fetch(`${GATEWAY_URL}/frame`, { method: "POST", body: form }).catch(() => {})
-        },
-        "image/jpeg",
-        0.7
-      )
+      void captureNow()
     }, 2500)
 
     return () => {
@@ -65,9 +72,10 @@ export function useFrameLoop(active: boolean) {
       clearInterval(timer)
       streamRef.current?.getTracks().forEach((t) => t.stop())
       streamRef.current = null
+      if (videoRef.current) videoRef.current.srcObject = null
       setCameraOn(false)
     }
-  }, [active])
+  }, [active, captureNow])
 
-  return { videoRef, cameraOn, cameraError }
+  return { videoRef, cameraOn, cameraError, captureNow }
 }

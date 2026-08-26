@@ -104,11 +104,11 @@ func executeTool(name string, rawArgs string) string {
 		}
 		answer, err := askVision(question)
 		if err != nil {
-			if s.Scene != "" {
-				return fmt.Sprintf(`{"scene":%q,"stale":true}`, s.Scene)
+			age := frameAge()
+			if s.Scene != "" && age >= 0 {
+				return fmt.Sprintf(`{"scene":%q,"stale":true,"frame_age_s":%.0f,"reason":%q}`, s.Scene, age.Seconds(), err.Error())
 			}
-			return fmt.Sprintf(`{"error":%q}`, err.Error())
-		}
+			return fmt.Sprintf(`{"error":%q}`, err.Error())}
 		updateState(func(st *sessionState) {
 			st.Scene = answer
 			st.SceneAt = time.Now()

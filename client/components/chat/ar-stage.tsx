@@ -181,26 +181,48 @@ type ScanChatMessage = {
 }
 
 function extractReply(raw: string): string {
-  const dig = (value: unknown): string | null => {
+  const unwrap = (value: unknown): string | null => {
     if (typeof value !== "string") return null
     try {
-      const parsed = JSON.parse(value) as Record<string, unknown>
-      const key = ["scene", "translation", "error", "status", "result"].find(
-        (k) => typeof parsed[k] === "string"
+      const inner = JSON.parse(value) as Record<string, unknown>
+      return (
+        unwrap(inner.scene ?? inner.translation ?? inner.error ?? inner.result) ??
+        value
       )
-      if (!key) return null
-      const inner = dig(parsed[key])
-      return inner ?? (parsed[key] as string)
     } catch {
-      return null
+      return value
     }
   }
-  return dig(raw) ?? raw
+
+  let parsed: Record<string, unknown>
+  try {
+    parsed = JSON.parse(raw) as Record<string, unknown>
+  } catch {
+    return raw
+  }
+
+  if (typeof parsed.error === "string") {
+    return `I could not look just now: ${parsed.error}`
+  }
+
+  const body =
+    unwrap(parsed.scene ?? parsed.translation ?? parsed.status ?? parsed.result) ?? raw
+
+  if (parsed.stale === true) {
+    const age =
+      typeof parsed.frame_age_s === "number"
+        ? `${parsed.frame_age_s}s old`
+        : "older view"
+    const why = typeof parsed.reason === "string" ? ` (${parsed.reason})` : ""
+    return `[${age}]${why} ${body}`
+  }
+
+  return body
 }
 
 function TourGuideStage() {
   const [scanning, setScanning] = useState(false)
-  const { videoRef, cameraOn, cameraError } = useFrameLoop(scanning)
+  const { videoRef, cameraOn, cameraError, captureNow } = useFrameLoop(scanning)
   useContextBeacon(scanning)
   const [chat, setChat] = useState<ScanChatMessage[]>([])
   const [draft, setDraft] = useState("")
@@ -227,6 +249,7 @@ function TourGuideStage() {
       return
     }
     setThinking(true)
+    await captureNow()
     try {
       const res = await fetch(`${GATEWAY_URL}/debug/tool`, {
         method: "POST",

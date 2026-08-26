@@ -24,11 +24,38 @@ var (
 	state   = &sessionState{Language: "en-US", Places: map[string][2]float64{}}
 )
 
+const frameMaxAge = 12 * time.Second
+
 var (
 	frameMu   sync.RWMutex
 	lastFrame []byte
 	frameType string
+	frameAt   time.Time
 )
+
+func storeFrame(b []byte, contentType string) {
+	frameMu.Lock()
+	defer frameMu.Unlock()
+	lastFrame = b
+	frameType = contentType
+	frameAt = time.Now()
+}
+
+func loadFrame() ([]byte, string) {
+	frameMu.RLock()
+	defer frameMu.RUnlock()
+	if frameAt.IsZero() || time.Since(frameAt) > frameMaxAge {
+		return nil, ""
+	}
+	return lastFrame, frameType}
+
+func frameAge() time.Duration {
+	frameMu.RLock()
+	defer frameMu.RUnlock()
+	if frameAt.IsZero() {
+		return -1
+	}
+	return time.Since(frameAt)}
 
 func updateState(f func(s *sessionState)) {
 	stateMu.Lock()
@@ -53,17 +80,6 @@ func keysOf(m map[string][2]float64) string {
 	}
 	return strings.Join(out, ", ")}
 
-func storeFrame(b []byte, contentType string) {
-	frameMu.Lock()
-	defer frameMu.Unlock()
-	lastFrame = b
-	frameType = contentType
-}
-
-func loadFrame() ([]byte, string) {
-	frameMu.RLock()
-	defer frameMu.RUnlock()
-	return lastFrame, frameType}
 
 func handleContext(w http.ResponseWriter, r *http.Request) {
 	writeCORS(w)
