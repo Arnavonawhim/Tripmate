@@ -20,12 +20,6 @@ export type ChatMessage = {
 let counter = 0
 const nextId = () => `m${++counter}`
 
-/**
- * Chat state for the two chat-mode strategies.
- *
- * "stream"    → quick answer, SSE token-by-token from one primary model.
- * "consensus" → deep thinking, several models answer and the best reply wins.
- */
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [pending, setPending] = useState(false)
@@ -58,37 +52,29 @@ export function useChat() {
       setPending(true)
 
       try {
-        if (mode === "stream") {
-          const controller = new AbortController()
-          abortRef.current = controller
-          let buffer = ""
+        const controller = new AbortController()
+        abortRef.current = controller
+        let buffer = ""
+        let failed: string | null = null
 
-          await streamAsk(
-            trimmed,
-            (delta) => {
-              buffer += delta
-              patch(replyId, { text: buffer })
-            },
-            (message) => patch(replyId, { text: message, error: true }),
-            controller.signal
-          )
+        await streamAsk(
+          trimmed,
+          (delta) => {
+            buffer += delta
+            patch(replyId, { text: buffer })
+          },
+          (message) => {
+            failed = message
+            patch(replyId, { text: message, error: true })
+          },
+          controller.signal
+        )
 
-          patch(replyId, {
-            streaming: false,
-            text: buffer || "No tokens returned.",
-          })
-        } else {
-          const result = await ask(trimmed, "semantic")
-          patch(replyId, {
-            streaming: false,
-            text: result.answer ?? "Got it!",
-            meta: {
-              chosen: result.chosen,
-              cached: result.cached,
-              strategy: result.strategy,
-            },
-          })
-        }
+        patch(replyId, {
+          streaming: false,
+          error: !buffer && failed !== null,
+          text: buffer || failed || "The router sent nothing back. Check its logs on Render.",
+        })
       } catch (err) {
         const aborted = err instanceof DOMException && err.name === "AbortError"
         patch(replyId, {

@@ -117,6 +117,12 @@ export async function streamAsk(
   if (!res.ok || !res.body) {
     throw new Error(`POST /stream failed: ${res.status}`)
   }
+  const contentType = res.headers.get("content-type") ?? ""
+  if (contentType.includes("application/json")) {
+    const data = (await res.json()) as { error?: string }
+    onError(data.error ?? "The router returned no stream")
+    return
+  }
 
   const reader = res.body.getReader()
   const decoder = new TextDecoder()

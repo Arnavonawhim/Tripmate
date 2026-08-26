@@ -1,19 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import {
   Captions,
   Crosshair,
-  Languages,
-  MapPin,
   Mic,
   PhoneOff,
-  Save,
   ScanLine,
   Sparkles,
   Video,
-  MicOff
+  MicOff,
+  Send
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAgentEvents } from "@/lib/hooks/use-agent-event"
@@ -78,26 +76,6 @@ function ControlButton({
   )
 }
 
-function ToolAction({
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  icon: React.ElementType
-  label: string
-  onClick?: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-center gap-2.5 rounded-[4px] border border-sand-100/12 bg-brand-900/45 px-4 py-3 text-left text-[0.83rem] text-sand-100/75 transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:border-sand-200/40 hover:text-sand-200"
-    >
-      <Icon className="h-3.5 w-3.5 shrink-0" />
-      {label}
-    </button>)
-  
-}
 
 function VideoCallStage() {
   const { status, error, muted, guideJoined, agentId, join, leave, toggleMute } = useVoiceCall()
@@ -196,45 +174,76 @@ function VideoCallStage() {
   )
 }
 
+type ScanChatMessage = {
+  id: number
+  role: "user" | "guide"
+  text: string
+}
+
+function extractReply(raw: string): string {
+  const dig = (value: unknown): string | null => {
+    if (typeof value !== "string") return null
+    try {
+      const parsed = JSON.parse(value) as Record<string, unknown>
+      const key = ["scene", "translation", "error", "status", "result"].find(
+        (k) => typeof parsed[k] === "string"
+      )
+      if (!key) return null
+      const inner = dig(parsed[key])
+      return inner ?? (parsed[key] as string)
+    } catch {
+      return null
+    }
+  }
+  return dig(raw) ?? raw
+}
+
 function TourGuideStage() {
   const [scanning, setScanning] = useState(false)
   const { videoRef, cameraOn, cameraError } = useFrameLoop(scanning)
   useContextBeacon(scanning)
+  const [chat, setChat] = useState<ScanChatMessage[]>([])
+  const [draft, setDraft] = useState("")
+  const [thinking, setThinking] = useState(false)
+  const idRef = useRef(0)
+  const scrollRef = useRef<HTMLDivElement | null>(null)
 
-  const runTool = async (name: string, args: Record<string, unknown>, label: string) => {
+  const pushMessage = (role: "user" | "guide", text: string) => {
+    idRef.current += 1
+    setChat((prev) => [...prev, { id: idRef.current, role, text }])
+  }
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight })
+  }, [chat, thinking])
+
+  const askAboutScene = async () => {
+    const question = draft.trim()
+    if (!question || thinking) return
+    setDraft("")
+    pushMessage("user", question)
+    if (!cameraOn) {
+      pushMessage("guide", "Start scanning first so I can see what you see.")
+      return
+    }
+    setThinking(true)
     try {
       const res = await fetch(`${GATEWAY_URL}/debug/tool`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, args }),
+        body: JSON.stringify({ name: "get_scene_context", args: { question } }),
       })
-      const data = (await res.json()) as Record<string, unknown>
-      toast(label, { description: JSON.stringify(data).slice(0, 220) })
+      const raw = await res.text()
+      pushMessage("guide", extractReply(raw))
     } catch (e) {
-      toast(label, { description: e instanceof Error ? e.message : String(e) })
-    }
-  }
-
-  const showMemories = async () => {
-    try {
-      const res = await fetch(`${GATEWAY_URL}/debug/state`)
-      const data = (await res.json()) as {
-        state?: { places?: Record<string, [number, number]> }
-      }
-      const places = Object.keys(data.state?.places ?? {})
-      toast("Memories", {
-        description:
-          places.length > 0
-            ? places.join(", ")
-            : "No places saved yet — ask the guide to remember one.",
-      })
-    } catch (e) {
-      toast("Memories", { description: e instanceof Error ? e.message : String(e) })
+      pushMessage("guide", e instanceof Error ? e.message : String(e))
+    } finally {
+      setThinking(false)
     }
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_15rem]">
+    <div className="grid gap-5 lg:grid-cols-[1fr_18rem]">
       <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[4px] border border-sand-100/12 bg-brand-900/60">
         <video
           ref={videoRef}
@@ -246,16 +255,20 @@ function TourGuideStage() {
             !cameraOn && "hidden"
           )}
         />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative flex h-32 w-32 items-center justify-center rounded-full border border-dashed border-sand-200/35">
-            <Crosshair className="h-5 w-5 text-sand-200/60" />
+        {!cameraOn && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="relative flex h-32 w-32 items-center justify-center rounded-full border border-dashed border-sand-200/35">
+              <Crosshair className="h-5 w-5 text-sand-200/60" />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-3 p-5">
-          <p className="text-[0.82rem] text-sand-100/55">
-            Point at the floor, then place your guide
-          </p>
+          {!cameraOn && (
+            <p className="text-[0.82rem] text-sand-100/55">
+              Start scanning to share your view with the guide
+            </p>
+          )}
           <button
             type="button"
             onClick={() => setScanning((v) => !v)}
@@ -271,30 +284,61 @@ function TourGuideStage() {
               ? cameraOn
                 ? "scanning — the guide sees this"
                 : cameraError ?? "starting camera…"
-              : "camera off — start scanning to share your view"}
+              : "camera off"}
           </p>
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
-        <h3 className="eyebrow text-sand-100/40">Guide can</h3>
-        <ToolAction icon={MapPin} label="Find nearby" onClick={() => void runTool("find_nearby", { query: "cafe" }, "Find nearby")}/>
-        <ToolAction
-          icon={Save}
-          label="Save this place"
-          onClick={() => void runTool("save_place", { name: "marked spot" }, "Save this place")}
-        />
-        <ToolAction icon={Sparkles} label="Memories" onClick={() => void showMemories()} />
-        <ToolAction
-          icon={Languages}
-          label="Translate a sign"
-          onClick={() =>
-            void runTool("translate_text", { target_language: "English" }, "Translate a sign")
-          }
-        />
-
-        <p className="mt-3 border-t border-sand-100/12 pt-4 text-[0.75rem] leading-relaxed text-sand-100/40">
-          Each action fires the same gateway tool the guide uses mid-call.
+        <h3 className="eyebrow text-sand-100/40">Ask about this place</h3>
+        <div className="flex h-80 flex-col rounded-[4px] border border-sand-100/12 bg-brand-900/45">
+          <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto p-3">
+            {chat.length === 0 && (
+              <p className="text-[0.75rem] leading-relaxed text-sand-100/40">
+                Start scanning, then ask about whatever the camera can see.
+              </p>
+            )}
+            {chat.map((m) => (
+              <div
+                key={m.id}
+                className={cn(
+                  "max-w-[90%] rounded-[4px] px-3 py-2 text-[0.78rem] leading-relaxed",
+                  m.role === "user"
+                    ? "ml-auto bg-sand-200 text-brand-900"
+                    : "bg-brand-950/70 text-sand-100/80"
+                )}
+              >
+                {m.text}
+              </div>
+            ))}
+            {thinking && (
+              <p className="text-[0.75rem] text-sand-100/40">looking around…</p>
+            )}
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              void askAboutScene()
+            }}
+            className="flex items-center gap-2 border-t border-sand-100/12 p-2"
+          >
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="What am I looking at?"
+              className="min-w-0 flex-1 bg-transparent px-2 py-1.5 text-[0.82rem] text-sand-100 placeholder:text-sand-100/30 focus:outline-none"
+            />
+            <button
+              type="submit"
+              disabled={thinking}
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sand-200 text-brand-900 transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:bg-paper disabled:opacity-40"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </form>
+        </div>
+        <p className="mt-1 text-[0.75rem] leading-relaxed text-sand-100/40">
+          Answers come from the same eyes the voice guide uses.
         </p>
       </div>
     </div>

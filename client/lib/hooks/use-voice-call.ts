@@ -9,8 +9,7 @@ import { GATEWAY_URL } from "@/lib/api"
 export type CallStatus = "idle" | "connecting" | "live" | "error"
 
 const APP_ID = process.env.NEXT_PUBLIC_AGORA_APP_ID ?? ""
-const [agentState, setAgentState] = useState<string | null>(null)
-const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
 
 export function useVoiceCall() {
   const [status, setStatus] = useState<CallStatus>("idle")
@@ -22,6 +21,8 @@ export function useVoiceCall() {
   const clientRef = useRef<IAgoraRTCClient | null>(null)
   const micRef = useRef<IMicrophoneAudioTrack | null>(null)
   const agentIdRef = useRef<string | null>(null)
+  const [agentState, setAgentState] = useState<string | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const leave = useCallback(async () => {
     const currentAgentId = agentIdRef.current
