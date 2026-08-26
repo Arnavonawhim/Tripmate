@@ -5,10 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import Lenis from "lenis"
 
-/**
- * Momentum smooth-scrolling. Disabled outright when the visitor asks for
- * reduced motion — native scrolling is the accessible default.
- */
 function SmoothScroll() {
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)")

@@ -54,17 +54,29 @@ async def metrics_models():
 
 @app.post("/stream")
 async def stream(req: AskRequest):
-    primary = pick_primary()
-    if primary is None:
+    candidates = [m for m in ACTIVE_MODELS if m.provider != "ollama"] or list(ACTIVE_MODELS)
+    if not candidates:
         return {"error": "no active models"}
 
     async def event_gen():
+        errors = []
         async with httpx.AsyncClient() as client:
-            try:
-                async for token in stream_model(client, primary, req.prompt):
-                    yield f"data: {json.dumps({'delta': token})}\n\n"
-            except Exception as e:
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+            for model in candidates:
+                sent = False
+                try:
+                    async for token in stream_model(client, model, req.prompt):
+                        sent = True
+                        yield f"data: {json.dumps({'delta': token})}\n\n"
+                except Exception as e:
+                    errors.append(f"{model.name}: {e}")
+                    if sent:
+                        break
+                    continue
+                if sent:
+                    break
+            else:
+                detail = " | ".join(errors) or "every model failed"
+                yield f"data: {json.dumps({'error': detail})}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(event_gen(), media_type="text/event-stream")
